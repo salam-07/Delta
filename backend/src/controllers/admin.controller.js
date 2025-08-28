@@ -54,4 +54,21 @@ export const showUsers = async (req, res) => {
         console.log("Error in showUsers controller", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-}; 
+};
+
+export const updatePrice = async (req, res) => {
+    try {
+        const { newPrice, ticker } = req.body;
+
+        if (!newPrice || !ticker) {
+            return res.status(404).json({ message: "All fields required" });
+        }
+
+        const updatedStock = await Stock.findOneAndUpdate({ ticker: ticker }, { price: newPrice }, { new: true });
+        res.status(200).json(updatedStock);
+
+    } catch (error) {
+        console.log("error in updatePrice", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
