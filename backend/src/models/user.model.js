@@ -24,7 +24,22 @@ const userSchema = new mongoose.Schema(
         balance: {
             type: Number,
             default: "1000"
-        }
+        },
+        portfolio: [{
+            ticker: {
+                type: String,
+                required: true
+            },
+            tradePrice: {
+                type: Number,
+                required: true
+            },
+            amount: {
+                type: Number,
+                required: true,
+                default: 0
+            }
+        }]
     },
     { timestamps: true }
 );
