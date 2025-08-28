@@ -29,8 +29,8 @@ app.use(cookieParser());
 // ));
 
 // routes
-app.use("/api/auth", authRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authRoutes); // endpoints for user related operations
+app.use("/api/admin", adminRoutes); // endpoints for admin operations: create stocks, show users, update prices
 
 
 app.listen(PORT, () => {

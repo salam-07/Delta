@@ -2,7 +2,7 @@ import Stock from "../models/stock.model.js";
 
 export const createStock = async (req, res) => {
 
-    const { ticker, name, price } = req.body; // takes name, email and password
+    const { ticker, name, price } = req.body; // takes ticker, name, price
     try {
         // validation checks
 
@@ -11,10 +11,10 @@ export const createStock = async (req, res) => {
             return res.status(400).json({ message: "All fields required" });
         }
 
-        // check if user already exists
+        // check if stock ticker already exists
         const stock = await Stock.findOne({ ticker });
 
-        // if user already exists, then show message
+        // if stock already exists, then show message
         if (stock) return res.status(400).json({ message: "Stock already exists" });
 
         // create new stock

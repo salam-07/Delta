@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// create the database collection (table) for a user
+// create the database collection (table) for a stock
 const stockSchema = new mongoose.Schema(
     {
         ticker: {

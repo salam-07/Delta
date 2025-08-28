@@ -30,6 +30,7 @@ export const protectRoute = async (req, res, next) => {
     }
 };
 
+// admin route checking. If current user is admin, allow route
 export const adminRoute = async (req, res, next) => {
     try {
         const token = req.cookies.jwt;
