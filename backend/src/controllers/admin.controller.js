@@ -1,4 +1,5 @@
 import Stock from "../models/stock.model.js";
+import User from "../models/user.model.js";
 
 export const createStock = async (req, res) => {
 
@@ -44,3 +45,13 @@ export const createStock = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const showUsers = async (req, res) => {
+    try {
+        const users = await User.find({ role: { $ne: "admin" } }).select("-password");
+        res.status(200).json(users);
+    } catch (error) {
+        console.log("Error in showUsers controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}; 
