@@ -8,6 +8,7 @@ import path from "path";
 // local imports
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
+import adminRoutes from "./routes/admin.route.js";
 
 // .env 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use(cookieParser());
 
 // routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.listen(PORT, () => {

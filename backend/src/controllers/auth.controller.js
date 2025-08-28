@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 // signup route
 export const signup = async (req, res) => {
 
-    const { fullName, email, password } = req.body; // takes name, email and password
+    const { fullName, email, password, role } = req.body; // takes name, email and password
     try {
         // validation checks
 
@@ -36,6 +36,7 @@ export const signup = async (req, res) => {
                 fullName: fullName,
                 email: email,
                 password: hashedPassword,
+                role: role
             }
         );
 
@@ -47,7 +48,7 @@ export const signup = async (req, res) => {
                 _id: newUser._id,
                 fullName: newUser.fullName,
                 email: newUser.email,
-                profilePic: newUser.profilePic
+                role: newUser.role
             });
 
         } else {
