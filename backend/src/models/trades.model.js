@@ -14,6 +14,15 @@ const tradeSchema = new mongoose.Schema({
     amount: {
         type: Number,
     },
+    type: {
+        type: String,
+    },
+    tradePrice: {
+        type: Number,
+    },
+    total: {
+        type: Number,
+    }
 },
     { timestamps: true }
 );
