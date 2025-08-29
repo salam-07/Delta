@@ -20,9 +20,12 @@ import Developments from './admin/Developments';
 import Analytics from './admin/Analytics';
 import SettingsComponent from './admin/Settings';
 
+import useAuthStore from '../store/useAuthStore';
+
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { authUser } = useAuthStore();
 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: Home },
@@ -74,7 +77,7 @@ const AdminDashboard = () => {
             `}>
                 {/* Sidebar Header */}
                 <div className="flex items-center justify-between h-16 px-6">
-                    <h1 className="text-xl font-bold text-green-400">Admin Panel</h1>
+                    <h1 className="text-xl font-bold text-green-400">Admin Dashboard</h1>
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="lg:hidden text-gray-400 hover:text-white"
@@ -98,7 +101,7 @@ const AdminDashboard = () => {
                                     w-full flex items-center px-6 py-3 text-left transition-colors
                                     ${activeTab === item.id
                                         ? 'bg-green-500/10 text-green-400 border-r-2 border-green-500'
-                                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                        : 'text-gray-300 hover:text-primary'
                                     }
                                 `}
                             >
@@ -110,13 +113,13 @@ const AdminDashboard = () => {
                 </nav>
 
                 {/* Sidebar Footer */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:bottom-16">
                     <div className="flex items-center">
                         <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                             <span className="text-sm font-bold text-black">A</span>
                         </div>
                         <div className="ml-3">
-                            <p className="text-sm font-medium">Admin User</p>
+                            <p className="text-sm font-medium">{authUser.fullName}</p>
                             <p className="text-xs text-gray-400">Administrator</p>
                         </div>
                     </div>
