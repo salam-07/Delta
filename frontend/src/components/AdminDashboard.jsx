@@ -19,6 +19,7 @@ import Trades from './admin/Trades';
 import Developments from './admin/Developments';
 import Analytics from './admin/Analytics';
 import SettingsComponent from './admin/Settings';
+import MarqueeText from './admin/MarqueeText';
 
 import useAuthStore from '../store/useAuthStore';
 
@@ -29,9 +30,9 @@ const AdminDashboard = () => {
 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: Home },
-        { id: 'users', label: 'Users', icon: Users },
-        { id: 'stocks', label: 'Stocks', icon: TrendingUp },
-        { id: 'trades', label: 'Trades', icon: BarChart3 },
+        { id: 'users', label: 'Manage Participants', icon: Users },
+        { id: 'stocks', label: 'Manage Stocks', icon: TrendingUp },
+        { id: 'trades', label: 'View Trades', icon: BarChart3 },
         { id: 'developments', label: 'Developments', icon: FileText },
         { id: 'analytics', label: 'Analytics', icon: DollarSign },
         { id: 'settings', label: 'Settings', icon: Settings },
@@ -149,15 +150,18 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
+                {/* Market Status Marquee */}
+                <MarqueeText />
+
                 {/* Content Area */}
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto p-6">{/* Added mt-8 for spacing below marquee */}
                     <div className="max-w-7xl mx-auto">
                         {/* Dynamic Content Based on Active Tab */}
                         {renderContent()}
                     </div>
                 </main>
             </div>
-        </div>
+        </div >
     );
 };
 

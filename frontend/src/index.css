@@ -5,3 +5,11 @@
 *:focus {
 	outline: none !important;
 }
+
+      .no-scrollbar::-webkit-scrollbar {
+        display: none; /* For WebKit browsers (Chrome, Safari, Edge, Opera) */
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none; /* For IE and Edge */
+        scrollbar-width: none; /* For Firefox */
+      }
