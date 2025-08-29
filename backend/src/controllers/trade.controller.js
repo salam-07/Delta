@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Stock from "../models/stock.model.js";
 import Trade from "../models/trades.model.js";
+import Development from "../models/development.model.js";
 
 export const viewAllStocks = async (req, res) => {
     try {
@@ -187,6 +188,28 @@ export const viewHistory = async (req, res) => {
         res.status(200).json(history);
     } catch (error) {
         console.log("Error in viewHistory controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const viewAllDevelopments = async (req, res) => {
+    try {
+        const devs = await Development.find({});
+        res.status(200).json(devs);
+    } catch (error) {
+        console.log("Error in viewAllDevelopments Controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const viewDevelopment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const dev = await Development.findById(id);
+        res.status(200).json(dev);
+
+    } catch (error) {
+        console.log("Error in viewDevelopment Controller", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

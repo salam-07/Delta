@@ -1,5 +1,6 @@
 import Stock from "../models/stock.model.js";
 import User from "../models/user.model.js";
+import Development from "../models/development.model.js";
 
 export const createStock = async (req, res) => {
 
@@ -69,6 +70,73 @@ export const updatePrice = async (req, res) => {
 
     } catch (error) {
         console.log("error in updatePrice", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const newDevelopment = async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        if (!title || !content) {
+            return res.status(400).json({ message: "All fields required" });
+        }
+
+        // check if stock ticker already exists
+        const development = await Development.findOne({ title });
+
+        // if stock already exists, then show message
+        if (development) return res.status(400).json({ message: "Development already exists" });
+
+        // create new stock
+        const newDev = new Development(
+            {
+                title: title,
+                content: content,
+            }
+        );
+
+        if (newDev) {
+            await newDev.save();
+            res.status(201).json({
+                _id: newDev._id,
+                title: newDev.title,
+                content: newDev.content,
+            });
+        }
+    } catch (error) {
+        console.log("error in newDevelopment", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const editDevelopment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { content } = req.body;
+
+        if (!content) {
+            return res.status(400).json({ message: "Content is required" });
+        }
+
+        const updatedDev = await Development.findByIdAndUpdate(id, { content: content }, { new: true });
+        if (!updatedDev) return res.status(404).json({ message: "Development not found" });
+        res.status(200).json(updatedDev);
+
+    } catch (error) {
+        console.log("error in editDevelopment", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const deleteDevelopment = async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        const deletedDev = await Development.findByIdAndDelete(req.params.id);
+        if (!deletedDev) return res.status(404).json({ message: "Development not found" });
+
+        res.status(200).json({ message: "Development Deleted!" });
+    } catch (error) {
+        console.error("Error in deleteDevelopment controller", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
