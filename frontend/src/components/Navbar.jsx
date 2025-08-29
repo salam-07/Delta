@@ -7,7 +7,7 @@ const Navbar = () => {
 
     return (
         <header
-            className="fixed w-full top-0 z-40 backdrop-blur-sm">
+            className="fixed w-full top-0 z-40 bg-black/70 backdrop-blur-md">
             <div className="container mx-auto px-4 h-12">
                 <div className="flex items-center justify-between h-full">
                     <div className="flex items-center gap-8">

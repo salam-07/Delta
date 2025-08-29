@@ -7,7 +7,7 @@ const HomePage = () => {
     const { isAdmin, authUser } = useAuthStore();
 
     return (
-        <div className="pt-20 px-6">
+        <div className="pt-16">
             <div className="max-w-6xl mx-auto">
                 {/* Welcome Section */}
             </div>
