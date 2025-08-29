@@ -1,6 +1,7 @@
 import Stock from "../models/stock.model.js";
 import User from "../models/user.model.js";
 import Development from "../models/development.model.js";
+import History from "../models/history.model.js";
 
 export const createStock = async (req, res) => {
 
@@ -28,8 +29,16 @@ export const createStock = async (req, res) => {
             }
         );
 
+        const newHistory = new History(
+            {
+                stockId: newStock._id,
+                price: price
+            }
+        );
+
         if (newStock) {
             await newStock.save();
+            await newHistory.save();
             res.status(201).json({
                 _id: newStock._id,
                 ticker: newStock.ticker,
@@ -66,6 +75,13 @@ export const updatePrice = async (req, res) => {
         }
 
         const updatedStock = await Stock.findOneAndUpdate({ ticker: ticker }, { price: newPrice }, { new: true });
+        const newHistory = new History(
+            {
+                stockId: updatedStock._id,
+                price: newPrice,
+            }
+        );
+        await newHistory.save();
         res.status(200).json(updatedStock);
 
     } catch (error) {

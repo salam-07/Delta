@@ -10,6 +10,7 @@ import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import tradeRoutes from "./routes/trade.route.js";
+import historyRoutes from "./routes/history.route.js";
 
 // .env 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes); // endpoints for user related operations
 app.use("/api/admin", adminRoutes); // endpoints for admin operations: create stocks, show users, update prices
 app.use("/api/trade", tradeRoutes); // endpoints for buying and selling stocks
+app.use("/api/history", historyRoutes); // ednpoint for stock prics history
 
 
 app.listen(PORT, () => {
