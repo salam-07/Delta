@@ -179,3 +179,14 @@ export const viewPortfolio = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const viewHistory = async (req, res) => {
+    try {
+        const traderId = req.user._id;
+        const history = await Trade.find({ traderId: traderId });
+        res.status(200).json(history);
+    } catch (error) {
+        console.log("Error in viewHistory controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};

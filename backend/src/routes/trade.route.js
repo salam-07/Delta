@@ -1,7 +1,7 @@
 import express from "express";
 
 // controller functions
-import { buy, sell, viewStock, viewAllStocks, checkBalance, viewPortfolio } from "../controllers/trade.controller.js";
+import { buy, sell, viewStock, viewAllStocks, checkBalance, viewPortfolio, viewHistory } from "../controllers/trade.controller.js";
 // admin only route checking
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -13,6 +13,7 @@ router.post("/sell", protectRoute, sell);
 
 router.get("/balance", protectRoute, checkBalance);
 router.get("/portfolio", protectRoute, viewPortfolio);
+router.get("/history", protectRoute, viewHistory);
 
 router.get("/view", protectRoute, viewAllStocks);
 router.get("/view/:ticker", protectRoute, viewStock);
