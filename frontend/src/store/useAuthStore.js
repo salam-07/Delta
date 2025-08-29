@@ -8,6 +8,7 @@ export const useAuthStore = create((set, get) => ({
     authUser: null,
     isSigningUp: false,
     isLoggingIn: false,
+    isAdmin: false,
     socket: null,
 
     isCheckingAuth: true,
@@ -16,10 +17,24 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.get("/auth/check");
             set({ authUser: res.data });
-            get().connectSocket();
+            // Check if user is admin based on role
+            set({ isAdmin: res.data?.role === "admin" });
         } catch (error) {
             console.log("Error in checkAuth", error);
-            set({ authUser: null });
+            set({ authUser: null, isAdmin: false });
+        } finally {
+            set({ isCheckingAuth: false });
+        }
+    },
+
+    checkAdmin: async () => {
+        try {
+            const res = await axiosInstance.get("/auth/admin");
+            set({ authUser: res.data });
+            set({ isAdmin: res.data?.role === "admin" });
+        } catch (error) {
+            console.log("Error in checkAdmin", error);
+            set({ authUser: null, isAdmin: false });
         } finally {
             set({ isCheckingAuth: false });
         }
@@ -30,6 +45,8 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/signup", data);
             set({ authUser: res.data });
+            // Set admin status based on role
+            set({ isAdmin: res.data?.role === "admin" });
             toast.success("Account Created");
         } catch (error) {
             toast.error(error.response.data.message);
@@ -43,6 +60,8 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/login", data);
             set({ authUser: res.data });
+            // Set admin status based on role
+            set({ isAdmin: res.data?.role === "admin" });
             toast.success("Logged in successfully");
         } catch (error) {
             toast.error(error.response.data.message);
@@ -54,7 +73,7 @@ export const useAuthStore = create((set, get) => ({
     logout: async () => {
         try {
             await axiosInstance.post("/auth/logout");
-            set({ authUser: null });
+            set({ authUser: null, isAdmin: false });
             toast.success("Logged out succesfully");
         } catch (error) {
             toast.error(error.response.data.message);

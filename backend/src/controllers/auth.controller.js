@@ -89,6 +89,7 @@ export const login = async (req, res) => {
             _id: user._id,
             fullName: user.fullName,
             email: user.email,
+            role: user.role
         });
 
     } catch (error) {
@@ -113,6 +114,15 @@ export const logout = (req, res) => {
 export const checkAuth = (req, res) => {
     try {
         res.status(200).json(req.user); // return the logged in user
+    } catch (error) {
+        console.log("Error in checkAuth controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const checkAdmin = (req, res) => {
+    try {
+        if (req.user.role === "admin") { return res.status(200).json(req.user); } // return the logged in user
     } catch (error) {
         console.log("Error in checkAuth controller", error);
         res.status(500).json({ message: "Internal Server Error" });

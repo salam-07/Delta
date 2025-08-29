@@ -1,7 +1,7 @@
 import express from "express";
 
 // controller functions
-import { checkAuth, login, logout, signup } from "../controllers/auth.controller.js";
+import { checkAuth, login, logout, signup, checkAdmin } from "../controllers/auth.controller.js";
 // protected route checking
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -14,5 +14,6 @@ router.post("/logout", logout);
 
 // if authenticated, then calls next function
 router.get("/check", protectRoute, checkAuth);
+router.get("/admin", protectRoute, checkAdmin);
 
 export default router;
