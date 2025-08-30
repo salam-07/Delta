@@ -11,7 +11,7 @@ const MarqueeText = () => {
     const continuousText = separatedText.repeat(100); // Repeat many times for seamless scrolling
 
     return (
-        <div className={`relative top-0 left-0 right-0 z-50 h-8 ${bgColor} overflow-hidden`}>
+        <div className={`relative top-0 left-0 right-0 z-20 h-8 ${bgColor} overflow-hidden`}>
             <div className="relative h-full">
                 {/* First scrolling text */}
                 <div

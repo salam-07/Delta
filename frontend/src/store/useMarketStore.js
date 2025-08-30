@@ -25,14 +25,4 @@ export const useMarketStore = create((set, get) => ({
         const { marketOpen, setMarketOpen } = get();
         await setMarketOpen(!marketOpen);
     },
-
-    openMarket: async () => {
-        const { setMarketOpen } = get();
-        await setMarketOpen(true);
-    },
-
-    closeMarket: async () => {
-        const { setMarketOpen } = get();
-        await setMarketOpen(false);
-    },
 }));
