@@ -156,3 +156,16 @@ export const deleteDevelopment = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const deleteStock = async (req, res) => {
+    try {
+        const { ticker } = req.body;
+        const deletedStock = await Stock.findOneAndDelete({ ticker: ticker });
+        if (!deletedStock) return res.status(404).json({ message: "Stock not found" });
+
+        res.status(200).json({ message: "Stock Deleted!" });
+    } catch (error) {
+        console.error("Error in deleteStock controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
