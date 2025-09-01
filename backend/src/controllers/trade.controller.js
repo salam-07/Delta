@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Stock from "../models/stock.model.js";
 import Trade from "../models/trades.model.js";
 import Development from "../models/development.model.js";
+import History from "../models/history.model.js";
 
 export const viewAllStocks = async (req, res) => {
     try {
@@ -211,5 +212,28 @@ export const viewDevelopment = async (req, res) => {
     } catch (error) {
         console.log("Error in viewDevelopment Controller", error);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+export const seeChange = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const initialPrice = Number(History.findOne({ stockId: id }).sort({ createdAt: 1 }).select("price"));
+        const currentPrice = Number(Stock.findById(id).select("price"));
+
+        const priceChange = currentPrice - initialPrice;
+
+        const percentageChange = initial !== 0 ? ((priceChange / initial) * 100) : 0;
+
+        res.status(200).json({
+            stockId: id,
+            priceChange: Number(priceChange.toFixed(2)),
+            percentageChange: Number(percentageChange.toFixed(2))
+        });
+    } catch (error) {
+        console.log("Error in seeChange Controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+
     }
 };
