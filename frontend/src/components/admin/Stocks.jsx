@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, TrendingUp, DollarSign, Edit, Trash2, RefreshCw } from "lucide-react";
+import { Plus, TrendingUp, DollarSign } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
+import StockTable from "../common/StockTable";
 
 
 const Stocks = () => {
-    const { createStock, fetchAllStocks, stocks, isLoading, deleteStock, deletingStockId } = useAdminStore();
+    const { createStock, fetchAllStocks, stocks, isLoading, deleteStock, deletingStockId, updateStock, updatingStock } = useAdminStore();
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [formData, setFormData] = useState({
         ticker: "",
@@ -53,6 +54,22 @@ const Stocks = () => {
         }
     };
 
+    const handlePriceIncrease = async (ticker, currentPrice, stockId, adjustmentValue) => {
+        const newPrice = currentPrice + adjustmentValue;
+        await updateStock({
+            ticker: ticker,
+            newPrice: newPrice
+        });
+    };
+
+    const handlePriceDecrease = async (ticker, currentPrice, stockId, adjustmentValue) => {
+        const newPrice = Math.max(0.01, currentPrice - adjustmentValue); // Ensure price doesn't go below 0.01
+        await updateStock({
+            ticker: ticker,
+            newPrice: newPrice
+        });
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -66,7 +83,6 @@ const Stocks = () => {
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                     <Plus size={20} />
-                    Create New Stock
                 </button>
             </div>
 
@@ -75,7 +91,6 @@ const Stocks = () => {
                 <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                         <TrendingUp className="text-green-500" size={24} />
-                        <h3 className="text-xl font-semibold text-white">Create New Stock</h3>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -167,82 +182,20 @@ const Stocks = () => {
             )}
 
             {/* Existing Stocks Section */}
-            <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-semibold text-white">Existing Stocks</h3>
-                    <button
-                        onClick={() => fetchAllStocks()}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
-                    >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-                        Refresh
-                    </button>
-                </div>
-
-                {isLoading && stocks.length === 0 ? (
-                    <div className="text-gray-400 text-center py-8">
-                        <div className="flex items-center justify-center gap-2">
-                            <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                            Loading stocks...
-                        </div>
-                    </div>
-                ) : stocks.length === 0 ? (
-                    <div className="text-gray-400 text-center py-8">
-                        No stocks found. Create your first stock using the form above.
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-gray-700">
-                                    <th className="text-left text-gray-300 font-medium py-3 px-4">Ticker</th>
-                                    <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
-                                    <th className="text-right text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                    <th className="text-left text-gray-300 font-medium py-3 px-4">Created</th>
-                                    <th className="text-center text-gray-300 font-medium py-3 px-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stocks.map((stock) => (
-                                    <tr key={stock._id} className="border-b border-gray-800 transition-colors">
-                                        <td className="py-4 px-4">
-                                            <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
-                                                {stock.ticker}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-white">{stock.name}</td>
-                                        <td className="py-4 px-4 text-right">
-                                            <span className="text-green-400 font-semibold">
-                                                ${stock.price.toFixed(2)}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-gray-400 text-sm">
-                                            {new Date(stock.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
-                                                    title="Delete Stock"
-                                                    onClick={() => handleDelete(stock._id)}
-                                                    disabled={deletingStockId === stock._id}
-                                                >
-                                                    {deletingStockId === stock._id ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+            <StockTable
+                stocks={stocks}
+                isLoading={isLoading}
+                onRefresh={fetchAllStocks}
+                onPriceIncrease={handlePriceIncrease}
+                onPriceDecrease={handlePriceDecrease}
+                onDelete={handleDelete}
+                updatingStock={updatingStock}
+                deletingStockId={deletingStockId}
+                showActions={true}
+                showDeleteColumn={true}
+                showRefreshButton={true}
+                title="Existing Stocks"
+            />
         </div>
     );
 };

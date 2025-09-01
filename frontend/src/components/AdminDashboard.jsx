@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Users,
     TrendingUp,
@@ -8,7 +8,7 @@ import {
     DollarSign,
     Menu,
     X,
-    Home
+    Home,
 } from 'lucide-react';
 
 // Import admin components
@@ -27,6 +27,16 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { authUser } = useAuthStore();
+
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timerId = setInterval(() => {
+            setTime(new Date());
+        }, 1000);
+
+        return () => clearInterval(timerId);
+    }, []);
 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: Home },
@@ -145,7 +155,7 @@ const AdminDashboard = () => {
 
                     <div className="flex items-center space-x-4">
                         <div className="text-sm text-gray-400">
-                            Last updated: {new Date().toLocaleTimeString()}
+                            Current Time: {time.toLocaleTimeString()}
                         </div>
                     </div>
                 </header>

@@ -8,6 +8,7 @@ export const useAdminStore = create((set, get) => ({
     isLoading: false,
     stocks: [],
     deletingStockId: null,
+    updatingStock: false,
 
     fetchAllStocks: async () => {
         set({ isLoading: true });
@@ -48,6 +49,21 @@ export const useAdminStore = create((set, get) => ({
             console.error("Error deleting stock:", error);
         } finally {
             set({ deletingStockId: null });
+        }
+    },
+
+    updateStock: async (data) => {
+        set({ updatingStock: true });
+        try {
+            const res = await axiosInstance.put("/admin/update", data);
+            toast.success("Stock Price Updated");
+            // Refresh the stocks list after updating stock
+            get().fetchAllStocks();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update stock");
+            console.error("Error updating stock:", error);
+        } finally {
+            set({ updatingStock: false });
         }
     },
 }));

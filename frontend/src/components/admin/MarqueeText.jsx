@@ -3,15 +3,15 @@ import { useMarketStore } from '../../store/useMarketStore';
 const MarqueeText = () => {
     const { marketOpen } = useMarketStore();
 
-    const marketText = marketOpen ? "MARKET OPEN" : "MARKET CLOSED";
-    const bgColor = marketOpen ? "bg-primary/30" : "bg-red-500/30";
+    const marketText = marketOpen ? "  MARKET  IS  OPEN  FOR TRADING  " : "  MARKET CLOSED  ";
+    const bgColor = marketOpen ? "bg-primary/40" : "bg-red-500/40";
 
     // Create continuous text with separators
-    const separatedText = `${marketText} • `;
+    const separatedText = `  ${marketText}   •   `;
     const continuousText = separatedText.repeat(100); // Repeat many times for seamless scrolling
 
     return (
-        <div className={`relative top-0 left-0 right-0 z-20 h-8 ${bgColor} overflow-hidden`}>
+        <div className={`relative top-0 left-0 right-0 z-20 h-6 ${bgColor} overflow-hidden`}>
             <div className="relative h-full">
                 {/* First scrolling text */}
                 <div
