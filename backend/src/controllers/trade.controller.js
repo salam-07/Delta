@@ -219,21 +219,33 @@ export const viewDevelopment = async (req, res) => {
 export const seeChange = async (req, res) => {
     try {
         const { id } = req.params;
-        const initialPrice = Number(History.findOne({ stockId: id }).sort({ createdAt: 1 }).select("price"));
-        const currentPrice = Number(Stock.findById(id).select("price"));
+
+        // Fix: Add await and proper query structure
+        const initialPriceRecord = await History.findOne({ stockId: id }).sort({ createdAt: 1 }).select("price");
+        const currentStock = await Stock.findById(id).select("price");
+
+        // Check if both records exist
+        if (!initialPriceRecord || !currentStock) {
+            return res.status(404).json({ message: "Stock or price history not found" });
+        }
+
+        const initialPrice = Number(initialPriceRecord.price);
+        const currentPrice = Number(currentStock.price);
 
         const priceChange = currentPrice - initialPrice;
 
-        const percentageChange = initial !== 0 ? ((priceChange / initial) * 100) : 0;
+        // Fix: Use initialPrice instead of undefined 'initial' variable
+        const percentageChange = initialPrice !== 0 ? ((priceChange / initialPrice) * 100) : 0;
 
         res.status(200).json({
             stockId: id,
+            initialPrice: initialPrice,
+            currentPrice: currentPrice,
             priceChange: Number(priceChange.toFixed(2)),
             percentageChange: Number(percentageChange.toFixed(2))
         });
     } catch (error) {
         console.log("Error in seeChange Controller", error);
         res.status(500).json({ message: "Internal Server Error" });
-
     }
 };

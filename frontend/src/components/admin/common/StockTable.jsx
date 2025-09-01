@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
+import { useTradeStore } from "../../../store/useTradeStore";
 
 const StockTable = ({
     stocks = [],
@@ -16,6 +17,49 @@ const StockTable = ({
     title = "Stocks"
 }) => {
     const [priceAdjustments, setPriceAdjustments] = useState({});
+    const [stockChanges, setStockChanges] = useState({});
+    const { seeChange } = useTradeStore();
+
+    const getChange = useCallback(async (stockId) => {
+        try {
+            const changeData = await seeChange(stockId);
+            setStockChanges(prev => ({
+                ...prev,
+                [stockId]: changeData
+            }));
+        } catch (error) {
+            console.error("Error fetching change data:", error);
+        }
+    }, [seeChange]);
+
+    // Fetch changes for all stocks when stocks array changes
+    useEffect(() => {
+        if (stocks.length > 0) {
+            stocks.forEach(stock => {
+                getChange(stock._id);
+            });
+        }
+    }, [stocks, getChange]);
+
+    // Function to render change data from state
+    const renderStockChange = (stockId) => {
+        const changeData = stockChanges[stockId];
+        if (!changeData) {
+            return <span className="text-gray-500 text-sm">Loading...</span>;
+        }
+
+        const { priceChange, percentageChange } = changeData;
+        const isPositive = priceChange >= 0;
+        const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
+        const sign = isPositive ? '+' : '';
+
+        return (
+            <div className={`${colorClass} text-sm`}>
+                <div>{sign}${priceChange}</div>
+                <div>({sign}{percentageChange}%)</div>
+            </div>
+        );
+    };
 
     const handlePriceAdjustmentChange = (stockId, value) => {
         setPriceAdjustments(prev => ({
@@ -76,7 +120,7 @@ const StockTable = ({
                                 )}
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Created</th>
+                                <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
                                 {showDeleteColumn && (
                                     <th className="text-left text-gray-300 font-medium py-3 px-4">Delete</th>
                                 )}
@@ -135,8 +179,8 @@ const StockTable = ({
                                         </span>
                                     </td>
                                     <td className="py-4 px-4 text-white">{stock.name}</td>
-                                    <td className="py-4 px-4 text-gray-400 text-sm">
-                                        {new Date(stock.createdAt).toLocaleDateString()}
+                                    <td className="py-4 px-4">
+                                        {renderStockChange(stock._id)}
                                     </td>
                                     {showDeleteColumn && (
                                         <td className="py-4 px-4">
