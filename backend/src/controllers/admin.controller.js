@@ -159,8 +159,8 @@ export const deleteDevelopment = async (req, res) => {
 
 export const deleteStock = async (req, res) => {
     try {
-        const { ticker } = req.body;
-        const deletedStock = await Stock.findOneAndDelete({ ticker: ticker });
+        const { id } = req.params;
+        const deletedStock = await Stock.findByIdAndDelete(id);
         if (!deletedStock) return res.status(404).json({ message: "Stock not found" });
 
         res.status(200).json({ message: "Stock Deleted!" });

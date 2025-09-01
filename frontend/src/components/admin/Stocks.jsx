@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Plus, TrendingUp, DollarSign, Edit, Trash2, RefreshCw } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
 
+
 const Stocks = () => {
-    const { createStock, fetchAllStocks, stocks, isLoading } = useAdminStore();
+    const { createStock, fetchAllStocks, stocks, isLoading, deleteStock, deletingStockId } = useAdminStore();
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [formData, setFormData] = useState({
         ticker: "",
@@ -44,6 +45,12 @@ const Stocks = () => {
     const resetForm = () => {
         setFormData({ ticker: "", name: "", price: "" });
         setShowCreateForm(false);
+    };
+
+    const handleDelete = async (stockId) => {
+        if (window.confirm("Are you sure you want to delete this stock? This action cannot be undone.")) {
+            await deleteStock(stockId);
+        }
     };
 
     return (
@@ -150,7 +157,7 @@ const Stocks = () => {
                             <button
                                 type="button"
                                 onClick={resetForm}
-                                className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors"
+                                className="border border-gray-300 text-white px-6 py-2 rounded-lg transition-colors"
                             >
                                 Cancel
                             </button>
@@ -198,7 +205,7 @@ const Stocks = () => {
                             </thead>
                             <tbody>
                                 {stocks.map((stock) => (
-                                    <tr key={stock._id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
+                                    <tr key={stock._id} className="border-b border-gray-800 transition-colors">
                                         <td className="py-4 px-4">
                                             <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
                                                 {stock.ticker}
@@ -216,16 +223,16 @@ const Stocks = () => {
                                         <td className="py-4 px-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
-                                                    title="Edit Price"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
                                                     title="Delete Stock"
+                                                    onClick={() => handleDelete(stock._id)}
+                                                    disabled={deletingStockId === stock._id}
                                                 >
-                                                    <Trash2 size={16} />
+                                                    {deletingStockId === stock._id ? (
+                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <Trash2 size={16} />
+                                                    )}
                                                 </button>
                                             </div>
                                         </td>

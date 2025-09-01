@@ -10,7 +10,7 @@ const router = express.Router();
 // create a new stock
 router.post("/create", adminRoute, createStock);
 router.put("/update", adminRoute, updatePrice);
-router.delete("/deletestock", adminRoute, deleteStock);
+router.delete("/deletestock/:id", adminRoute, deleteStock);
 
 
 router.get("/users", adminRoute, showUsers);

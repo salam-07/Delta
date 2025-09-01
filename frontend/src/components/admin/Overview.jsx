@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, Plus, Minus, AlertCircle } from 'lucide-react';
 import { useMarketStore } from '../../store/useMarketStore';
+import { useAdminStore } from '../../store/useAdminStore';
 
 const Overview = () => {
     const { marketOpen, toggleMarket, isMarketOpening } = useMarketStore();
+    const { fetchAllStocks, stocks } = useAdminStore();
 
 
-    // Mock data - replace with real data later
-    const [stocks, setStocks] = useState([
-        { id: 1, ticker: 'AAPL', name: 'Apple Inc.', price: 150.25 },
-        { id: 2, ticker: 'GOOGL', name: 'Alphabet Inc.', price: 2800.50 },
-    ]);
+    // Fetch stocks on component mount
+    useEffect(() => {
+        fetchAllStocks();
+    }, [fetchAllStocks]);
 
     const latestDevelopment = {
         title: "Platform Update v2.1",
@@ -73,31 +74,12 @@ const Overview = () => {
                                             </div>
                                         </div>
                                         <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => handlePriceChange(stock.id, -10)}
-                                                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded transition-colors"
-                                                disabled={!marketOpen}
-                                            >
-                                                <Minus className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handlePriceChange(stock.id, 10)}
-                                                className="bg-green-600 hover:bg-green-700 text-white p-2 rounded transition-colors"
-                                                disabled={!marketOpen}
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                            </button>
+
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        {!marketOpen && (
-                            <div className="mt-4 flex items-center text-yellow-400 text-sm">
-                                <AlertCircle className="w-4 h-4 mr-2" />
-                                Price adjustments are disabled when market is closed
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

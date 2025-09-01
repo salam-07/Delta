@@ -7,6 +7,7 @@ const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001
 export const useAdminStore = create((set, get) => ({
     isLoading: false,
     stocks: [],
+    deletingStockId: null,
 
     fetchAllStocks: async () => {
         set({ isLoading: true });
@@ -32,6 +33,21 @@ export const useAdminStore = create((set, get) => ({
             toast.error(error.response.data.message);
         } finally {
             set({ isLoading: false });
+        }
+    },
+
+    deleteStock: async (stockId) => {
+        set({ deletingStockId: stockId });
+        try {
+            const res = await axiosInstance.delete(`/admin/deletestock/${stockId}`);
+            toast.success("Stock Deleted Successfully");
+            // Refresh the stocks list after deleting
+            get().fetchAllStocks();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete stock");
+            console.error("Error deleting stock:", error);
+        } finally {
+            set({ deletingStockId: null });
         }
     },
 }));
