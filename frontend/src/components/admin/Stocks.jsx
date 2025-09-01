@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, TrendingUp, DollarSign } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
-import StockTable from "../common/StockTable";
+import StockTable from "./common/StockTable";
 
 
 const Stocks = () => {
