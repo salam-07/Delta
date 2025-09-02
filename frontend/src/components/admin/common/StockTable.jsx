@@ -90,7 +90,7 @@ const StockTable = ({
                     <button
                         onClick={onRefresh}
                         disabled={isLoading}
-                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
+                        className="flex items-center gap-2  disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
                     >
                         <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                         Refresh
