@@ -30,5 +30,16 @@ export const useTradeStore = create((set, get) => ({
             toast.error(error.response?.data?.message || "Failed to fetch stock change");
             throw error;
         }
+    },
+
+    priceHistory: async (stockId) => {
+        try {
+            const res = await axiosInstance.get(`/history/${stockId}`);
+            return res.data;
+        } catch (error) {
+            console.error("Error fetching stock price history:", error);
+            toast.error(error.response?.data?.message || "Failed to fetch price history");
+            throw error;
+        }
     }
 }));

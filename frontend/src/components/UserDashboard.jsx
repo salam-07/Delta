@@ -25,16 +25,6 @@ const userDashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { authUser } = useAuthStore();
 
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-        const timerId = setInterval(() => {
-            setTime(new Date());
-        }, 1000);
-
-        return () => clearInterval(timerId);
-    }, []);
-
     const menuItems = [
         { id: 'home', label: 'Market', icon: Home },
         { id: 'trade', label: 'Trade', icon: TrendingUp },
@@ -71,7 +61,7 @@ const userDashboard = () => {
 
             {/* Sidebar */}
             <div className={`
-                fixed inset-y-0 left-0 z-30 w-64 bg-inherit backdrop-blur-lg shadow-lg
+                fixed inset-y-0 left-0 z-30 w-64 bg-inherit backdrop-blur-md shadow-lg
                 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
                 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
             `}>
@@ -144,7 +134,7 @@ const userDashboard = () => {
 
                     <div className="flex items-center space-x-4">
                         <div className="text-sm text-gray-400">
-                            Current Time: {time.toLocaleTimeString()}
+
                         </div>
                     </div>
                 </header>
