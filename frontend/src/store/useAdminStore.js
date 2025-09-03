@@ -5,8 +5,6 @@ import { useMarketStore } from "./useMarketStore.js";
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
-const { fetchAllStocks, fetchAllDev } = useMarketStore();
-
 export const useAdminStore = create((set, get) => ({
     creatingStock: false,
     updatingStock: false,
@@ -24,7 +22,7 @@ export const useAdminStore = create((set, get) => ({
             const res = await axiosInstance.post("/admin/createstock", data);
             toast.success("Stock Created");
             // Refresh the stocks list after creating a new stock
-            fetchAllStocks();
+            useMarketStore.getState().fetchAllStocks();
         } catch (error) {
             toast.error(error.response.data.message);
         } finally {
@@ -38,7 +36,7 @@ export const useAdminStore = create((set, get) => ({
             const res = await axiosInstance.delete(`/admin/deletestock/${stockId}`);
             toast.success("Stock Deleted Successfully");
             // Refresh the stocks list after deleting
-            fetchAllStocks();
+            useMarketStore.getState().fetchAllStocks();
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to delete stock");
             console.error("Error deleting stock:", error);
@@ -47,13 +45,13 @@ export const useAdminStore = create((set, get) => ({
         }
     },
 
-    updateStock: async (data) => {
+    updateStock: async (stockId, data) => {
         set({ updatingStock: true });
         try {
-            const res = await axiosInstance.put("/admin/updatestock", data);
+            const res = await axiosInstance.put(`/admin/updatestock/${stockId}`, data);
             toast.success("Stock Price Updated");
             // Refresh the stocks list after updating stock
-            fetchAllStocks();
+            useMarketStore.getState().fetchAllStocks();
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to update stock");
             console.error("Error updating stock:", error);
@@ -68,7 +66,7 @@ export const useAdminStore = create((set, get) => ({
             const res = await axiosInstance.post("/admin/createdev", data);
             toast.success("Development Created");
             // Refresh the development list after creating a new stock
-            fetchAllDev();
+            useMarketStore.getState().fetchAllDev();
         } catch (error) {
             toast.error(error.response.data.message);
         } finally {
@@ -82,7 +80,7 @@ export const useAdminStore = create((set, get) => ({
             const res = await axiosInstance.delete(`/admin/deletedev/${devId}`);
             toast.success("Development Deleted Successfully");
             // Refresh the Developments list after deleting
-            fetchAllDev();
+            useMarketStore.getState().fetchAllDev();
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to delete development");
             console.error("Error deleting Development:", error);
@@ -91,13 +89,13 @@ export const useAdminStore = create((set, get) => ({
         }
     },
 
-    updateDev: async (data) => {
+    updateDev: async (devId, data) => {
         set({ updatingDev: true });
         try {
-            const res = await axiosInstance.put("/admin/updatedev", data);
+            const res = await axiosInstance.put(`/admin/editdev/${devId}`, data);
             toast.success("Development Edited");
-            // Refresh the stocks list after updating stock
-            fetchAllDev();
+            // Refresh the development list after updating
+            useMarketStore.getState().fetchAllDev();
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to edit development");
             console.error("Error updating development:", error);
@@ -106,16 +104,16 @@ export const useAdminStore = create((set, get) => ({
         }
     },
 
-    postDev: async (data) => {
+    postDev: async (devId, data) => {
         set({ postingDev: true });
         try {
-            const res = await axiosInstance.put("/admin/postdev", data);
-            toast.success("Development Edited");
-            // Refresh the stocks list after updating stock
-            fetchAllDev();
+            const res = await axiosInstance.put(`/admin/postdev/${devId}`, data);
+            toast.success("Development Status Updated");
+            // Refresh the development list after updating
+            useMarketStore.getState().fetchAllDev();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to edit development");
-            console.error("Error updating development:", error);
+            toast.error(error.response?.data?.message || "Failed to update development status");
+            console.error("Error updating development status:", error);
         } finally {
             set({ postingDev: false });
         }

@@ -1,5 +1,6 @@
 import Stock from "../models/stock.model.js";
 import History from "../models/history.model.js";
+import Development from "../models/development.model.js";
 
 
 export const viewAllStocks = async (req, res) => {
@@ -42,6 +43,9 @@ export const viewStockHistory = async (req, res) => {
 export const viewAllDevelopments = async (req, res) => {
     try {
         const devs = await Development.find({});
+        if (!devs) {
+            return res.status(404).json({ message: "No Developments Found" });
+        }
         res.status(200).json(devs);
     } catch (error) {
         console.log("Error in viewAllDevelopments Controller", error);

@@ -74,16 +74,14 @@ const Stocks = () => {
 
     const handlePriceIncrease = async (ticker, currentPrice, stockId, adjustmentValue) => {
         const newPrice = currentPrice + adjustmentValue;
-        await updateStock({
-            ticker: ticker,
+        await updateStock(stockId, {
             newPrice: newPrice
         });
     };
 
     const handlePriceDecrease = async (ticker, currentPrice, stockId, adjustmentValue) => {
         const newPrice = Math.max(0.01, currentPrice - adjustmentValue); // Ensure price doesn't go below 0.01
-        await updateStock({
-            ticker: ticker,
+        await updateStock(stockId, {
             newPrice: newPrice
         });
     };

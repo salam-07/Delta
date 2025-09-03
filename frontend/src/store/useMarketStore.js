@@ -1,13 +1,20 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
+import { axiosInstance } from "../lib/axios.js";
 
 export const useMarketStore = create((set, get) => ({
     marketOpen: false,
     isMarketOpening: false,
+
     stocks: [],
     stock: null,
     isStocksLoading: false,
     isStockLoading: false,
+
+    devs: [],
+    dev: null,
+    isDevsLoading: false,
+    isDevLoading: false,
 
     setMarketOpen: async (marketOpen) => {
         set({ isMarketOpening: true });
@@ -55,4 +62,31 @@ export const useMarketStore = create((set, get) => ({
             set({ isStockLoading: false });
         }
     },
+
+    fetchAllDev: async () => {
+        set({ isDevsLoading: true });
+        try {
+            const res = await axiosInstance.get("/market/viewdevs");
+            set({ devs: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch developments");
+            console.error("Error fetching developments:", error);
+        } finally {
+            set({ isDevsLoading: false });
+        }
+    },
+
+    fetchDev: async (devId) => {
+        set({ isDevLoading: true });
+        try {
+            const res = await axiosInstance.get(`/market/viewdev/${devId}`);
+            set({ dev: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch development");
+            console.error("Error fetching development:", error);
+        } finally {
+            set({ isDevLoading: false });
+        }
+    },
+
 }));
