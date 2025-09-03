@@ -1,7 +1,6 @@
 import express from "express";
 
 import {
-    viewMarketIndex,
     viewAllStocks,
     viewStock,
     viewAllDevelopments,

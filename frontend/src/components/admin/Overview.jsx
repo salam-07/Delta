@@ -4,8 +4,7 @@ import { useMarketStore } from '../../store/useMarketStore';
 import { useAdminStore } from '../../store/useAdminStore';
 
 const Overview = () => {
-    const { marketOpen, toggleMarket, isMarketOpening } = useMarketStore();
-    const { fetchAllStocks, stocks } = useAdminStore();
+    const { marketOpen, toggleMarket, isMarketOpening, fetchAllStocks, stocks } = useMarketStore();
 
 
     // Fetch stocks on component mount

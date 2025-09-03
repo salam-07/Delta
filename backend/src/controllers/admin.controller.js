@@ -167,7 +167,7 @@ export const postDevelopment = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
-        const updatedDev = await Development.findByIdAndUpdate(id, { posted: true }, { new: true });
+        const updatedDev = await Development.findByIdAndUpdate(id, { posted: status }, { new: true });
         if (!updatedDev) return res.status(404).json({ message: "Development not found" });
         res.status(200).json(updatedDev);
 

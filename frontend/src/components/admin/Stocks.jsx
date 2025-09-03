@@ -2,10 +2,28 @@ import { useState, useEffect } from "react";
 import { Plus, TrendingUp, DollarSign } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
 import StockTable from "./common/StockTable";
+import { useMarketStore } from "../../store/useMarketStore";
 
 
 const Stocks = () => {
-    const { createStock, fetchAllStocks, stocks, isLoading, deleteStock, deletingStockId, updateStock, updatingStock } = useAdminStore();
+    const {
+        createStock,
+        deleteStock,
+        deletingStockId,
+        updateStock,
+        creatingStock,
+        updatingStock,
+    } = useAdminStore();
+
+    const {
+        fetchAllStocks,
+        stocks,
+        fetchStock,
+        stock,
+        isStocksLoading,
+        isStockLoading
+    } = useMarketStore();
+
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [formData, setFormData] = useState({
         ticker: "",
@@ -184,7 +202,7 @@ const Stocks = () => {
             {/* Existing Stocks Section */}
             <StockTable
                 stocks={stocks}
-                isLoading={isLoading}
+                isLoading={isStocksLoading}
                 onRefresh={fetchAllStocks}
                 onPriceIncrease={handlePriceIncrease}
                 onPriceDecrease={handlePriceDecrease}
