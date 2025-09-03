@@ -109,7 +109,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                     data={chartData}
                     margin={{
                         top: 20,
-                        right: 30,
+                        right: 20,
                         left: 20,
                         bottom: 20,
                     }}
@@ -118,14 +118,14 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                         <CartesianGrid
                             strokeDasharray="3 3"
                             stroke="#374151"
-                            opacity={0.3}
+                            opacity={0.1}
                         />
                     )}
                     <XAxis
                         dataKey="time"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        tick={{ fill: '', fontSize: 12 }}
                         interval="preserveStartEnd"
                     />
                     <YAxis
@@ -137,7 +137,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Line
-                        type="monotone"
+                        type="linear"
                         dataKey="price"
                         stroke={getLineColor()}
                         strokeWidth={3}
