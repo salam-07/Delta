@@ -26,6 +26,7 @@ export const createStock = async (req, res) => {
             {
                 ticker: ticker,
                 name: name,
+                openingPrice: price,
                 price: price,
             }
         );
@@ -66,7 +67,7 @@ export const updatePrice = async (req, res) => {
             return res.status(404).json({ message: "All fields required" });
         }
 
-        const updatedStock = await Stock.findOneAndUpdate({ id: id }, { price: newPrice }, { new: true });
+        const updatedStock = await Stock.findByIdAndUpdate(id, { price: newPrice }, { new: true });
         const newHistory = new History(
             {
                 stockId: updatedStock._id,

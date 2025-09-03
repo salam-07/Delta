@@ -11,6 +11,9 @@ const stockSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        openingPrice: {
+            type: Number,
+        },
         price: {
             type: Number,
             required: true,

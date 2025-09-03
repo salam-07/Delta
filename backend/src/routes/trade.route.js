@@ -15,11 +15,4 @@ router.get("/balance", protectRoute, checkBalance);
 router.get("/portfolio", protectRoute, viewPortfolio);
 router.get("/history", protectRoute, viewHistory);
 
-router.get("/view", protectRoute, viewAllStocks);
-router.get("/view/:ticker", protectRoute, viewStock);
-router.get("/change/:id", protectRoute, seeChange);
-
-router.get("/viewdev", protectRoute, viewAllDevelopments);
-router.get("/viewdev/:id", protectRoute, viewDevelopment);
-
 export default router;

@@ -1,30 +1,7 @@
 import User from "../models/user.model.js";
 import Stock from "../models/stock.model.js";
 import Trade from "../models/trade.model.js";
-import Development from "../models/development.model.js";
 import History from "../models/history.model.js";
-
-export const viewAllStocks = async (req, res) => {
-    try {
-        const stocks = await Stock.find({});
-        res.status(200).json(stocks);
-    } catch (error) {
-        console.log("Error in viewAllStocks Controller", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-export const viewStock = async (req, res) => {
-    try {
-        const { ticker } = req.params;
-        const stockInfo = await Stock.find({ ticker: ticker });
-        res.status(200).json(stockInfo);
-
-    } catch (error) {
-        console.log("Error in view Controller", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
 
 export const buy = async (req, res) => {
     try {
@@ -189,63 +166,6 @@ export const viewHistory = async (req, res) => {
         res.status(200).json(history);
     } catch (error) {
         console.log("Error in viewHistory controller", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-export const viewAllDevelopments = async (req, res) => {
-    try {
-        const devs = await Development.find({});
-        res.status(200).json(devs);
-    } catch (error) {
-        console.log("Error in viewAllDevelopments Controller", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-export const viewDevelopment = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const dev = await Development.findById(id);
-        res.status(200).json(dev);
-
-    } catch (error) {
-        console.log("Error in viewDevelopment Controller", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-
-export const seeChange = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        // Fix: Add await and proper query structure
-        const initialPriceRecord = await History.findOne({ stockId: id }).sort({ createdAt: 1 }).select("price");
-        const currentStock = await Stock.findById(id).select("price");
-
-        // Check if both records exist
-        if (!initialPriceRecord || !currentStock) {
-            return res.status(404).json({ message: "Stock or price history not found" });
-        }
-
-        const initialPrice = Number(initialPriceRecord.price);
-        const currentPrice = Number(currentStock.price);
-
-        const priceChange = currentPrice - initialPrice;
-
-        // Fix: Use initialPrice instead of undefined 'initial' variable
-        const percentageChange = initialPrice !== 0 ? ((priceChange / initialPrice) * 100) : 0;
-
-        res.status(200).json({
-            stockId: id,
-            initialPrice: initialPrice,
-            currentPrice: currentPrice,
-            priceChange: Number(priceChange.toFixed(2)),
-            percentageChange: Number(percentageChange.toFixed(2))
-        });
-    } catch (error) {
-        console.log("Error in seeChange Controller", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
