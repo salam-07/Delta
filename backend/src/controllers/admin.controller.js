@@ -62,7 +62,6 @@ export const updatePrice = async (req, res) => {
     try {
         const { newPrice } = req.body;
         const { id } = req.params;
-
         if (!newPrice) {
             return res.status(404).json({ message: "All fields required" });
         }

@@ -169,3 +169,15 @@ export const viewHistory = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const viewPortfolioStock = async (req, res) => {
+    try {
+        const traderId = req.user._id;
+        const { id } = req.params;
+        const portfolio = await User.find(traderId).select("portfolio");
+        res.status(200).json(portfolio);
+    } catch (error) {
+        console.log("Error in viewPortfolio controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
