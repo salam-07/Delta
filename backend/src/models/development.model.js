@@ -11,6 +11,10 @@ const developmentSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        posted: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );

@@ -2,6 +2,7 @@ import Stock from "../models/stock.model.js";
 import User from "../models/user.model.js";
 import Development from "../models/development.model.js";
 import History from "../models/history.model.js";
+import Trade from "../models/trade.model.js";
 
 export const createStock = async (req, res) => {
 
@@ -56,25 +57,16 @@ export const createStock = async (req, res) => {
     }
 };
 
-export const showUsers = async (req, res) => {
-    try {
-        const users = await User.find({ role: { $ne: "admin" } }).select("-password");
-        res.status(200).json(users);
-    } catch (error) {
-        console.log("Error in showUsers controller", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-};
-
 export const updatePrice = async (req, res) => {
     try {
-        const { newPrice, ticker } = req.body;
+        const { newPrice } = req.body;
+        const { id } = req.params;
 
-        if (!newPrice || !ticker) {
+        if (!newPrice) {
             return res.status(404).json({ message: "All fields required" });
         }
 
-        const updatedStock = await Stock.findOneAndUpdate({ ticker: ticker }, { price: newPrice }, { new: true });
+        const updatedStock = await Stock.findOneAndUpdate({ id: id }, { price: newPrice }, { new: true });
         const newHistory = new History(
             {
                 stockId: updatedStock._id,
@@ -86,6 +78,19 @@ export const updatePrice = async (req, res) => {
 
     } catch (error) {
         console.log("error in updatePrice", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const deleteStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedStock = await Stock.findByIdAndDelete(id);
+        if (!deletedStock) return res.status(404).json({ message: "Stock not found" });
+
+        res.status(200).json({ message: "Stock Deleted!" });
+    } catch (error) {
+        console.error("Error in deleteStock controller", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
@@ -157,15 +162,40 @@ export const deleteDevelopment = async (req, res) => {
     }
 };
 
-export const deleteStock = async (req, res) => {
+export const postDevelopment = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedStock = await Stock.findByIdAndDelete(id);
-        if (!deletedStock) return res.status(404).json({ message: "Stock not found" });
+        const { status } = req.body;
 
-        res.status(200).json({ message: "Stock Deleted!" });
+        const updatedDev = await Development.findByIdAndUpdate(id, { posted: true }, { new: true });
+        if (!updatedDev) return res.status(404).json({ message: "Development not found" });
+        res.status(200).json(updatedDev);
+
     } catch (error) {
-        console.error("Error in deleteStock controller", error);
+        console.log("error in postDevelopment", error);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+export const showUsers = async (req, res) => {
+    try {
+        const users = await User.find({ role: { $ne: "admin" } }).select("-password");
+        res.status(200).json(users);
+    } catch (error) {
+        console.log("Error in showUsers controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+export const showTradingHistory = async (req, res) => {
+    try {
+        const history = await Trade.find({});
+        res.status(200).json(history);
+
+    } catch (error) {
+        console.log("Error in showTradingHistory controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+
     }
 };

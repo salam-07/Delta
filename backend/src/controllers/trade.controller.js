@@ -1,6 +1,6 @@
 import User from "../models/user.model.js";
 import Stock from "../models/stock.model.js";
-import Trade from "../models/trades.model.js";
+import Trade from "../models/trade.model.js";
 import Development from "../models/development.model.js";
 import History from "../models/history.model.js";
 
