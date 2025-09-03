@@ -173,11 +173,65 @@ export const viewHistory = async (req, res) => {
 export const viewPortfolioStock = async (req, res) => {
     try {
         const traderId = req.user._id;
-        const { id } = req.params;
-        const portfolio = await User.find(traderId).select("portfolio");
-        res.status(200).json(portfolio);
+        const { id } = req.params; // This should be the ticker symbol
+
+        // Find the user and get their portfolio
+        const user = await User.findById(traderId).select("portfolio");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find the specific stock in the portfolio by ticker
+        const portfolioStock = user.portfolio.find(stock => stock.ticker === id);
+
+        if (!portfolioStock) {
+            return res.status(404).json({
+                message: "Stock not found in portfolio"
+            });
+        }
+
+        // Get current market data for the stock
+        const currentStock = await Stock.findOne({ ticker: id });
+
+        if (!currentStock) {
+            return res.status(404).json({
+                message: "Stock data not found"
+            });
+        }
+
+        // Calculate current value and profit/loss
+        const currentPrice = Number(currentStock.price);
+        const averageBuyPrice = Number(portfolioStock.tradePrice);
+        const quantity = Number(portfolioStock.amount);
+
+        const currentValue = quantity * currentPrice;
+        const totalInvested = quantity * averageBuyPrice;
+        const profitLoss = currentValue - totalInvested;
+        const profitLossPercentage = totalInvested > 0 ?
+            ((profitLoss / totalInvested) * 100).toFixed(2) : 0;
+
+        // Return detailed stock information
+        res.status(200).json({
+            stock: {
+                ticker: portfolioStock.ticker,
+                name: currentStock.name,
+                currentPrice: currentPrice.toFixed(2),
+                averageBuyPrice: averageBuyPrice.toFixed(2),
+                quantity: quantity,
+                totalInvested: totalInvested.toFixed(2),
+                currentValue: currentValue.toFixed(2),
+                profitLoss: profitLoss.toFixed(2),
+                profitLossPercentage: profitLossPercentage,
+                isProfit: profitLoss >= 0,
+                priceChange: (currentPrice - averageBuyPrice).toFixed(2),
+                priceChangePercentage: averageBuyPrice > 0 ?
+                    (((currentPrice - averageBuyPrice) / averageBuyPrice) * 100).toFixed(2) : 0
+            }
+        });
+
     } catch (error) {
-        console.log("Error in viewPortfolio controller", error);
+        console.log("Error in viewPortfolioStock controller", error);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
