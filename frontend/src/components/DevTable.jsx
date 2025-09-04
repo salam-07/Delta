@@ -1,4 +1,5 @@
 import { RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const DevTable = ({
     devs = [],
@@ -67,9 +68,10 @@ const DevTable = ({
                 /* Responsive Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {devs.map((dev) => (
-                        <div
+                        <Link
                             key={dev._id}
-                            className=" backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 cursor-pointer group"
+                            to={`/admin/developments/${dev._id}`}
+                            className=" backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 cursor-pointer group block"
                         >
                             {/* Status Badge */}
                             {dev.posted !== undefined && (
@@ -79,7 +81,11 @@ const DevTable = ({
                                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                             : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                                             } ${onToggleStatus ? 'cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200' : ''}`}
-                                        onClick={onToggleStatus ? () => onToggleStatus(dev._id, dev.posted ? 'published' : 'draft') : undefined}
+                                        onClick={onToggleStatus ? (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onToggleStatus(dev._id, dev.posted ? 'published' : 'draft');
+                                        } : undefined}
                                         title={onToggleStatus ? `Click to ${dev.posted ? 'mark as draft' : 'publish'}` : undefined}
                                     >
                                         {dev.posted ? 'Published' : 'Draft'}
@@ -109,7 +115,7 @@ const DevTable = ({
                                     {dev.content ? `${dev.content.split(' ').length} words` : "No content"}
                                 </span>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             )}

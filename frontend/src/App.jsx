@@ -14,6 +14,7 @@ import AdminStocks from "./pages/admin/AdminStocks";
 import AdminStockView from "./pages/admin/AdminStockView";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminDevelopments from "./pages/admin/AdminDevelopments";
+import AdminDevelopmentView from "./pages/admin/AdminDevelopmentView";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminTrades from "./pages/admin/AdminTrades";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -66,6 +67,7 @@ const App = () => {
           <Route path="/admin/stocks/:stockId" element={admin ? <AdminStockView /> : <Navigate to="/" />} />
           <Route path="/admin/analytics" element={admin ? <AdminAnalytics /> : <Navigate to="/" />} />
           <Route path="/admin/developments" element={admin ? <AdminDevelopments /> : <Navigate to="/" />} />
+          <Route path="/admin/developments/:devId" element={admin ? <AdminDevelopmentView /> : <Navigate to="/" />} />
           <Route path="/admin/settings" element={admin ? <AdminSettings /> : <Navigate to="/"> </Navigate>} />
           <Route path="/admin/trades" element={admin ? <AdminTrades /> : <Navigate to="/"> </Navigate>} />
           <Route path="/admin/users" element={admin ? <AdminUsers /> : <Navigate to="/"> </Navigate>} />
