@@ -4,6 +4,7 @@ const DevTable = ({
     devs = [],
     isLoading = false,
     onRefresh = () => { },
+    onToggleStatus = null,
     showRefreshButton = true,
     title = "Developments"
 }) => {
@@ -73,10 +74,14 @@ const DevTable = ({
                             {/* Status Badge */}
                             {dev.posted !== undefined && (
                                 <div className="flex justify-end mb-3">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${dev.posted
-                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                        : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                        }`}>
+                                    <span
+                                        className={`px-2 py-1 rounded-full text-xs font-medium ${dev.posted
+                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                            } ${onToggleStatus ? 'cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200' : ''}`}
+                                        onClick={onToggleStatus ? () => onToggleStatus(dev._id, dev.posted ? 'published' : 'draft') : undefined}
+                                        title={onToggleStatus ? `Click to ${dev.posted ? 'mark as draft' : 'publish'}` : undefined}
+                                    >
                                         {dev.posted ? 'Published' : 'Draft'}
                                     </span>
                                 </div>

@@ -78,6 +78,14 @@ const AdminDevelopments = () => {
         });
     };
 
+    const handleToggleStatus = async (devId, currentStatus) => {
+        // Convert currentStatus string to boolean and invert it
+        const newStatus = currentStatus === 'draft'; // draft becomes true (published), published becomes false (draft)
+        await postDev(devId, { status: newStatus });
+        // Refresh the developments list to show updated status
+        fetchAllDev();
+    };
+
     return (
         <AdminLayout title="Development Management">
             <div className="space-y-6">
@@ -174,6 +182,7 @@ const AdminDevelopments = () => {
                     devs={devs}
                     isLoading={isDevsLoading}
                     onRefresh={fetchAllDev}
+                    onToggleStatus={handleToggleStatus}
                     showRefreshButton={true}
                     title="All Developments"
                 />
