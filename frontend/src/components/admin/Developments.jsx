@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, FileText } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
 import { useMarketStore } from "../../store/useMarketStore";
-import DevTable from "./common/DevTable";
+import DevTable from "../common/DevTable";
 
 
 const Devs = () => {

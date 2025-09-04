@@ -1,55 +1,53 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
-import { useTradeStore } from "../../../store/useTradeStore";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useAdminStore } from "../../store/useAdminStore";
 
 const StockTable = ({
-    stocks = [],
-    isLoading = false,
-    onRefresh = () => { },
-    onPriceIncrease = () => { },
-    onPriceDecrease = () => { },
-    onDelete = () => { },
-    updatingStock = false,
-    deletingStockId = null,
     showActions = true,
     showDeleteColumn = true,
     showRefreshButton = true,
     title = "Stocks"
 }) => {
     const [priceAdjustments, setPriceAdjustments] = useState({});
-    const [stockChanges, setStockChanges] = useState({});
-    const { seeChange } = useTradeStore();
 
-    const getChange = useCallback(async (stockId) => {
-        try {
-            const changeData = await seeChange(stockId);
-            setStockChanges(prev => ({
-                ...prev,
-                [stockId]: changeData
-            }));
-        } catch (error) {
-            console.error("Error fetching change data:", error);
-        }
-    }, [seeChange]);
+    // Get data and actions from stores
+    const {
+        stocks,
+        isStocksLoading,
+        fetchAllStocks
+    } = useMarketStore();
 
-    // Fetch changes for all stocks when stocks array changes
+    const {
+        updateStock,
+        deleteStock,
+        updatingStock,
+        deletingStockId
+    } = useAdminStore();
+
+    // Fetch stocks on component mount
     useEffect(() => {
-        if (stocks.length > 0) {
-            stocks.forEach(stock => {
-                getChange(stock._id);
-            });
-        }
-    }, [stocks, getChange]);
+        fetchAllStocks();
+    }, [fetchAllStocks]);
 
-    // Function to render change data from state
-    const renderStockChange = (stockId) => {
-        const changeData = stockChanges[stockId];
-        if (!changeData) {
-            return <span className="text-gray-500 text-sm">Loading...</span>;
-        }
+    // Simple function to calculate price change using openingPrice and current price
+    const calculatePriceChange = (stock) => {
+        const openingPrice = parseFloat(stock.openingPrice) || 0;
+        const currentPrice = parseFloat(stock.price) || 0;
 
-        const { priceChange, percentageChange } = changeData;
-        const isPositive = priceChange >= 0;
+        const priceChange = currentPrice - openingPrice;
+        const percentageChange = openingPrice > 0 ? ((priceChange / openingPrice) * 100) : 0;
+
+        return {
+            priceChange: priceChange.toFixed(2),
+            percentageChange: percentageChange.toFixed(2),
+            isPositive: priceChange >= 0
+        };
+    };
+
+    // Function to render price change
+    const renderPriceChange = (stock) => {
+        const { priceChange, percentageChange, isPositive } = calculatePriceChange(stock);
         const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
         const sign = isPositive ? '+' : '';
 
@@ -59,6 +57,12 @@ const StockTable = ({
                 <div>({sign}{percentageChange}%)</div>
             </div>
         );
+    };
+
+    const handleDelete = async (stockId) => {
+        if (window.confirm("Are you sure you want to delete this stock? This action cannot be undone.")) {
+            await deleteStock(stockId);
+        }
     };
 
     const handlePriceAdjustmentChange = (stockId, value) => {
@@ -72,14 +76,16 @@ const StockTable = ({
         return priceAdjustments[stockId] || 10; // Default to 10 if no custom value
     };
 
-    const handlePriceIncrease = (ticker, currentPrice, stockId) => {
+    const handlePriceIncrease = async (ticker, currentPrice, stockId) => {
         const adjustmentValue = getPriceAdjustmentValue(stockId);
-        onPriceIncrease(ticker, currentPrice, stockId, parseFloat(adjustmentValue));
+        const newPrice = currentPrice + parseFloat(adjustmentValue);
+        await updateStock(stockId, { newPrice });
     };
 
-    const handlePriceDecrease = (ticker, currentPrice, stockId) => {
+    const handlePriceDecrease = async (ticker, currentPrice, stockId) => {
         const adjustmentValue = getPriceAdjustmentValue(stockId);
-        onPriceDecrease(ticker, currentPrice, stockId, parseFloat(adjustmentValue));
+        const newPrice = Math.max(0.01, currentPrice - parseFloat(adjustmentValue)); // Ensure price doesn't go below 0.01
+        await updateStock(stockId, { newPrice });
     };
 
     return (
@@ -88,17 +94,17 @@ const StockTable = ({
                 <h3 className="text-xl font-semibold text-white">{title}</h3>
                 {showRefreshButton && (
                     <button
-                        onClick={onRefresh}
-                        disabled={isLoading}
-                        className="flex items-center gap-2  disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
+                        onClick={fetchAllStocks}
+                        disabled={isStocksLoading}
+                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
                     >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                        <RefreshCw size={16} className={isStocksLoading ? "animate-spin" : ""} />
                         Refresh
                     </button>
                 )}
             </div>
 
-            {isLoading && stocks.length === 0 ? (
+            {isStocksLoading && stocks.length === 0 ? (
                 <div className="text-gray-400 text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                         <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
@@ -119,8 +125,9 @@ const StockTable = ({
                                     <th className="text-center text-gray-300 font-medium py-3 px-4">Price Actions</th>
                                 )}
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
+                                <th className="text-left text-gray-300 font-medium py-3 px-4">Opening Price</th>
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
+                                <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
                                 {showDeleteColumn && (
                                     <th className="text-left text-gray-300 font-medium py-3 px-4">Delete</th>
                                 )}
@@ -178,17 +185,23 @@ const StockTable = ({
                                             ${stock.price.toFixed(2)}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-4 text-white">{stock.name}</td>
-                                    <td className="py-4 px-4">
-                                        {renderStockChange(stock._id)}
+                                    <td className="py-4 px-4 text-left">
+                                        <span className="text-gray-400 font-medium">
+                                            ${stock.openingPrice ? stock.openingPrice.toFixed(2) : '0.00'}
+                                        </span>
                                     </td>
+                                    <td className="py-4 px-4">
+                                        {renderPriceChange(stock)}
+                                    </td>
+                                    <td className="py-4 px-4 text-white">{stock.name}</td>
+
                                     {showDeleteColumn && (
                                         <td className="py-4 px-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
                                                     className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
                                                     title="Delete Stock"
-                                                    onClick={() => onDelete(stock._id)}
+                                                    onClick={() => handleDelete(stock._id)}
                                                     disabled={deletingStockId === stock._id}
                                                 >
                                                     {deletingStockId === stock._id ? (
