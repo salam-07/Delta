@@ -16,6 +16,9 @@ export const useMarketStore = create((set, get) => ({
     isDevsLoading: false,
     isDevLoading: false,
 
+    history: [],
+    isHistoryLoading: false,
+
     setMarketOpen: async (marketOpen) => {
         set({ isMarketOpening: true });
         try {
@@ -60,6 +63,19 @@ export const useMarketStore = create((set, get) => ({
             console.error("Error fetching stock:", error);
         } finally {
             set({ isStockLoading: false });
+        }
+    },
+
+    fetchStockHistory: async (stockId) => {
+        set({ isHistoryLoading: true });
+        try {
+            const res = await axiosInstance.get(`/market/history/${stockId}`);
+            set({ history: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch stock history");
+            console.error("Error fetching history:", error);
+        } finally {
+            set({ isHistoryLoading: false });
         }
     },
 

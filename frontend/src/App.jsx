@@ -1,9 +1,6 @@
 import Navbar from "./components/Navbar";
-
-import HomePage from "./pages/HomePage";
-import SignUpPage from "./pages/SignupPage";
+import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
-
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";;
@@ -12,8 +9,19 @@ import { useEffect } from "react";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
+import AdminHome from "./pages/admin/AdminHome";
+import AdminStocks from "./pages/admin/AdminStocks";
+import AdminStockView from "./pages/admin/AdminStockView";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminDevelopments from "./pages/admin/AdminDevelopments";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminTrades from "./pages/admin/AdminTrades";
+import AdminUsers from "./pages/admin/AdminUsers";
+
+import UserHome from "./pages/user/UserHome";
+
 const App = () => {
-  const { authUser, checkAuth, isCheckingState } = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth, isAdmin } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
@@ -21,11 +29,14 @@ const App = () => {
 
   console.log({ authUser });
 
-  if (isCheckingState && !authUser) {
+  if (isCheckingAuth && !authUser) {
     return (<div className="flex items-center justify-center h-screen">
       <Loader className="size-10 animate-spin" />
     </div>);
   }
+
+  const admin = authUser && isAdmin;
+  const user = authUser && !isAdmin;
 
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
@@ -37,9 +48,30 @@ const App = () => {
       <div className="relative z-10 h-full overflow-y-auto">
         <Navbar />
         <Routes>
-          <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
+
+          <Route
+            path="/"
+            element={
+              !authUser ? <Navigate to="/login" /> :
+                admin ? <Navigate to="/admin" /> :
+                  user ? <Navigate to="/home" /> :
+                    <Navigate to="/login" />
+            } />
+
           <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
           <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
+
+          <Route path="/admin" element={admin ? <AdminHome /> : <Navigate to="/" />} />
+          <Route path="/admin/stocks" element={admin ? <AdminStocks /> : <Navigate to="/" />} />
+          <Route path="/admin/stocks/:stockId" element={admin ? <AdminStockView /> : <Navigate to="/" />} />
+          <Route path="/admin/analytics" element={admin ? <AdminAnalytics /> : <Navigate to="/" />} />
+          <Route path="/admin/developments" element={admin ? <AdminDevelopments /> : <Navigate to="/" />} />
+          <Route path="/admin/settings" element={admin ? <AdminSettings /> : <Navigate to="/"> </Navigate>} />
+          <Route path="/admin/trades" element={admin ? <AdminTrades /> : <Navigate to="/"> </Navigate>} />
+          <Route path="/admin/users" element={admin ? <AdminUsers /> : <Navigate to="/"> </Navigate>} />
+
+          <Route path="/home" element={user ? <UserHome /> : <Navigate to="/" />} />
+
         </Routes>
       </div>
       <Toaster />
