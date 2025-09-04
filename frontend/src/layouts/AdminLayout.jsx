@@ -1,18 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
+import { useMarketStore } from '../store/useMarketStore';
 
 const AdminLayout = ({ children, title = "Admin Dashboard" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-        const timerId = setInterval(() => {
-            setTime(new Date());
-        }, 1000);
-
-        return () => clearInterval(timerId);
-    }, []);
+    const { marketOpen } = useMarketStore();
 
     return (
         <div className="flex h-screen text-white pt-10">
@@ -30,6 +23,18 @@ const AdminLayout = ({ children, title = "Admin Dashboard" }) => {
                         >
                             <Menu className="w-6 h-6" />
                         </button>
+                    </div>
+
+                    {/* Market Status Indicator */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${marketOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                                }`}></div>
+                            <span className={`text-sm font-medium ${marketOpen ? 'text-green-400' : 'text-red-400'
+                                }`}>
+                                {marketOpen ? 'Market Open' : 'Market Closed'}
+                            </span>
+                        </div>
                     </div>
                 </header>
 
