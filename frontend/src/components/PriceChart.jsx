@@ -37,21 +37,6 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
         }
     }, [history]);
 
-    // Custom tooltip component
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            const data = payload[0].payload;
-            return (
-                <div className="rounded-lg p-3 shadow-lg backdrop-blur-md">
-                    <p className="text-gray-300 text-sm">{data.fullDate}</p>
-                    <p className="text-green-400 font-semibold">
-                        Price: ${payload[0].value.toFixed(2)}
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
 
     // Determine line color based on price trend
     const getLineColor = () => {
@@ -131,7 +116,6 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                         domain={['dataMin - 1', 'dataMax + 1']}
                         tickFormatter={(value) => `$${value.toFixed(2)}`}
                     />
-                    <Tooltip content={<CustomTooltip />} />
                     <Line
                         type="linear"
                         dataKey="price"
