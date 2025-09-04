@@ -4,14 +4,30 @@ import AdminLayout from '../../layouts/AdminLayout';
 import { useMarketStore } from '../../store/useMarketStore';
 import { useAdminStore } from '../../store/useAdminStore';
 import StockTable from '../../components/StockTable';
+import DevTable from '../../components/DevTable';
 
 const AdminHome = () => {
-    const { marketOpen, toggleMarket, isMarketOpening, fetchAllStocks, stocks } = useMarketStore();
+    const { marketOpen,
+        toggleMarket,
+        isMarketOpening,
+        fetchAllStocks,
+        stocks,
+        devs,
+        isDevsLoading,
+        fetchAllDev } = useMarketStore();
 
     // Fetch stocks on component mount
     useEffect(() => {
         fetchAllStocks();
     }, [fetchAllStocks]);
+
+    const handleToggleStatus = async (devId, currentStatus) => {
+        // Convert currentStatus string to boolean and invert it
+        const newStatus = currentStatus === 'draft'; // draft becomes true (published), published becomes false (draft)
+        await postDev(devId, { status: newStatus });
+        // Refresh the developments list to show updated status
+        fetchAllDev();
+    };
 
     return (
         <AdminLayout title="Overview">
@@ -48,6 +64,17 @@ const AdminHome = () => {
                             showDeleteColumn={false}
                             showRefreshButton={false}
                             title="Stocks"
+                        />
+                    </div>
+
+                    <div className="lg:col-span-3">
+                        <DevTable
+                            devs={devs}
+                            isLoading={isDevsLoading}
+                            onRefresh={fetchAllDev}
+                            onToggleStatus={handleToggleStatus}
+                            showRefreshButton={false}
+                            title="Latest Developments"
                         />
                     </div>
 
