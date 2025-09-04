@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
 import { useMarketStore } from "../store/useMarketStore";
 import { useAdminStore } from "../store/useAdminStore";
@@ -135,11 +136,16 @@ const StockTable = ({
                         </thead>
                         <tbody>
                             {stocks.map((stock) => (
-                                <tr key={stock._id} className="border-b border-gray-800 transition-colors">
+                                <tr key={stock._id} className="border-b border-gray-800 ">
                                     <td className="py-4 px-4">
-                                        <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
-                                            {stock.ticker}
-                                        </span>
+                                        <Link
+                                            to={`/admin/stocks/${stock._id}`}
+                                            className="block"
+                                        >
+                                            <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono hover:bg-green-600/30 transition-colors">
+                                                {stock.ticker}
+                                            </span>
+                                        </Link>
                                     </td>
                                     {showActions && (
                                         <td className="py-4 px-4">
@@ -147,7 +153,10 @@ const StockTable = ({
                                                 <button
                                                     className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white p-1 rounded text-s font-semibold min-w-[30px] transition-colors"
                                                     title={`Increase Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={() => handlePriceIncrease(stock.ticker, stock.price, stock._id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePriceIncrease(stock.ticker, stock.price, stock._id);
+                                                    }}
                                                     disabled={updatingStock}
                                                 >
                                                     {updatingStock ? (
@@ -160,6 +169,7 @@ const StockTable = ({
                                                     type="number"
                                                     value={getPriceAdjustmentValue(stock._id)}
                                                     onChange={(e) => handlePriceAdjustmentChange(stock._id, e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     className="bg-transparent w-16 rounded px-1 py-1 text-white text-xs text-center focus:border-green-500 focus:outline-none"
                                                     min="0.1"
                                                     step="1"
@@ -168,7 +178,10 @@ const StockTable = ({
                                                 <button
                                                     className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-1 rounded text-xs font-semibold min-w-[30px] transition-colors"
                                                     title={`Decrease Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={() => handlePriceDecrease(stock.ticker, stock.price, stock._id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePriceDecrease(stock.ticker, stock.price, stock._id);
+                                                    }}
                                                     disabled={updatingStock}
                                                 >
                                                     {updatingStock ? (
@@ -181,19 +194,37 @@ const StockTable = ({
                                         </td>
                                     )}
                                     <td className="py-4 px-4 text-left">
-                                        <span className="text-green-400 font-semibold">
+                                        <Link
+                                            to={`/admin/stocks/${stock._id}`}
+                                            className="text-green-400 font-semibold hover:text-green-300 transition-colors"
+                                        >
                                             ${stock.price.toFixed(2)}
-                                        </span>
+                                        </Link>
                                     </td>
                                     <td className="py-4 px-4 text-left">
-                                        <span className="text-gray-400 font-medium">
+                                        <Link
+                                            to={`/admin/stocks/${stock._id}`}
+                                            className="text-gray-400 font-medium hover:text-gray-300 transition-colors"
+                                        >
                                             ${stock.openingPrice ? stock.openingPrice.toFixed(2) : '0.00'}
-                                        </span>
+                                        </Link>
                                     </td>
                                     <td className="py-4 px-4">
-                                        {renderPriceChange(stock)}
+                                        <Link
+                                            to={`/admin/stocks/${stock._id}`}
+                                            className="block"
+                                        >
+                                            {renderPriceChange(stock)}
+                                        </Link>
                                     </td>
-                                    <td className="py-4 px-4 text-white">{stock.name}</td>
+                                    <td className="py-4 px-4 text-white">
+                                        <Link
+                                            to={`/admin/stocks/${stock._id}`}
+                                            className="text-white hover:text-gray-300 transition-colors"
+                                        >
+                                            {stock.name}
+                                        </Link>
+                                    </td>
 
                                     {showDeleteColumn && (
                                         <td className="py-4 px-4">
@@ -201,7 +232,10 @@ const StockTable = ({
                                                 <button
                                                     className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
                                                     title="Delete Stock"
-                                                    onClick={() => handleDelete(stock._id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(stock._id);
+                                                    }}
                                                     disabled={deletingStockId === stock._id}
                                                 >
                                                     {deletingStockId === stock._id ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, Edit3, ChevronUp, ChevronDown } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { useMarketStore } from '../../store/useMarketStore';
@@ -8,15 +8,19 @@ import PriceChart from '../../components/PriceChart';
 
 const AdminStockView = () => {
     const { stockId } = useParams();
+    const navigate = useNavigate();
     const [priceAdjustment, setPriceAdjustment] = useState(10);
 
     const {
         stock,
+        stocks,
         history,
         fetchStock,
         fetchStockHistory,
+        fetchAllStocks,
         isStockLoading,
-        isHistoryLoading
+        isHistoryLoading,
+        isStocksLoading
     } = useMarketStore();
 
     const { updateStock, updatingStock } = useAdminStore();
@@ -27,6 +31,18 @@ const AdminStockView = () => {
             fetchStockHistory(stockId);
         }
     }, [stockId, fetchStock, fetchStockHistory]);
+
+    // Fetch all stocks for dropdown
+    useEffect(() => {
+        fetchAllStocks();
+    }, [fetchAllStocks]);
+
+    const handleStockSelect = (e) => {
+        const selectedStockId = e.target.value;
+        if (selectedStockId && selectedStockId !== stockId) {
+            navigate(`/admin/stocks/${selectedStockId}`);
+        }
+    };
 
     const handlePriceIncrease = async () => {
         const newPrice = stock.price + parseFloat(priceAdjustment);
@@ -82,6 +98,34 @@ const AdminStockView = () => {
     return (
         <AdminLayout title={`${stock.ticker} - Stock Details`}>
             <div className="space-y-6">
+                {/* Stock Selector Dropdown */}
+                <div className="p-4">
+                    <div className="flex items-center gap-4">
+                        <select
+                            id="stock-selector"
+                            value={stockId}
+                            onChange={handleStockSelect}
+                            disabled={isStocksLoading}
+                            className="bg-black border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex-1 max-w-md"
+                        >
+                            {isStocksLoading ? (
+                                <option value="">Loading stocks...</option>
+                            ) : (
+                                <>
+                                    <option value="">Select a stock...</option>
+                                    {stocks.map((stockOption) => (
+                                        <option key={stockOption._id} value={stockOption._id}>
+                                            {stockOption.ticker} - {stockOption.name}
+                                        </option>
+                                    ))}
+                                </>
+                            )}
+                        </select>
+                        {isStocksLoading && (
+                            <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        )}
+                    </div>
+                </div>
                 {/* Top Section - Price and Company Info */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left - Current Price */}
