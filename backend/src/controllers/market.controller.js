@@ -27,7 +27,7 @@ export const viewStock = async (req, res) => {
 export const viewStockHistory = async (req, res) => {
     try {
         const { id } = req.params;
-        const history = await History.find(id);
+        const history = await History.find({ stockId: id });
 
         if (!history) {
             return res.status(404).json({ message: "History not found" });

@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTradeStore } from '../store/useTradeStore';
+import { useMarketStore } from '../store/useMarketStore';
 
 const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) => {
     const [chartData, setChartData] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { priceHistory } = useTradeStore();
+    const { fetchStockHistory, history, isHistoryLoading } = useMarketStore();
 
-    const fetchPriceHistory = useCallback(async () => {
+    useEffect(() => {
         if (!stockId) return;
-
-        setIsLoading(true);
         setError(null);
-        try {
-            const historyData = await priceHistory(stockId);
+        console.log('PriceChart: Fetching history for stockId:', stockId);
+        fetchStockHistory(stockId);
+    }, [stockId, fetchStockHistory]);
 
-            // Transform the data for the chart
-            const formattedData = historyData.map((item, index) => ({
+    // Transform history data when it changes
+    useEffect(() => {
+        console.log('PriceChart: History data changed:', history);
+        if (history && history.length > 0) {
+            console.log('PriceChart: Formatting history data, length:', history.length);
+            const formattedData = history.map((item, index) => ({
                 time: new Date(item.createdAt).toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -27,19 +29,13 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                 fullDate: new Date(item.createdAt).toLocaleString(),
                 index: index
             }));
-
+            console.log('PriceChart: Formatted data:', formattedData);
             setChartData(formattedData);
-        } catch (err) {
-            setError('Failed to load price history');
-            console.error('Error fetching price history:', err);
-        } finally {
-            setIsLoading(false);
+        } else {
+            console.log('PriceChart: No history data or empty array');
+            setChartData([]);
         }
-    }, [stockId, priceHistory]);
-
-    useEffect(() => {
-        fetchPriceHistory();
-    }, [fetchPriceHistory]);
+    }, [history]);
 
     // Custom tooltip component
     const CustomTooltip = ({ active, payload, label }) => {
@@ -65,7 +61,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
         return lastPrice >= firstPrice ? '#10b981' : '#ef4444'; // Green if up, red if down
     };
 
-    if (isLoading) {
+    if (isHistoryLoading) {
         return (
             <div className={`flex items-center justify-center ${className}`} style={{ height }}>
                 <div className="flex items-center space-x-2 text-gray-400">
@@ -82,7 +78,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                 <div className="text-center text-gray-400">
                     <p className="text-red-400 mb-2">⚠️ {error}</p>
                     <button
-                        onClick={fetchPriceHistory}
+                        onClick={() => stockId && fetchStockHistory(stockId)}
                         className="text-green-400 hover:text-green-300 underline text-sm"
                     >
                         Try again
