@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import AdminSidebar from '../components/AdminSidebar';
+import AdminSidebar from '../components/admin/AdminSidebar';
 import { useMarketStore } from '../store/useMarketStore';
 
 const AdminLayout = ({ children, title = "Admin Dashboard" }) => {

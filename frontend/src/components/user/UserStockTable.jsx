@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
+import { ShoppingCart, TrendingUp } from "lucide-react";
 import { useMarketStore } from "../../store/useMarketStore";
-import { useAdminStore } from "../../store/useAdminStore";
+import { useTradeStore } from "../../store/useTradeStore";
 
-const StockTable = ({
-    showActions = true,
-    showDeleteColumn = true,
+const UserStockTable = ({
     showRefreshButton = true,
-    title = "Stocks"
+    title = "Market Stocks"
 }) => {
-    const [priceAdjustments, setPriceAdjustments] = useState({});
+    const [shareAmounts, setShareAmounts] = useState({});
 
     // Get data and actions from stores
     const {
@@ -20,11 +17,10 @@ const StockTable = ({
     } = useMarketStore();
 
     const {
-        updateStock,
-        deleteStock,
-        updatingStock,
-        deletingStockId
-    } = useAdminStore();
+        buyStock,
+        sellStock,
+        isTrading
+    } = useTradeStore();
 
     // Fetch stocks on component mount
     useEffect(() => {
@@ -60,46 +56,42 @@ const StockTable = ({
         );
     };
 
-    const handleDelete = async (stockId) => {
-        if (window.confirm("Are you sure you want to delete this stock? This action cannot be undone.")) {
-            await deleteStock(stockId);
-        }
-    };
-
-    const handlePriceAdjustmentChange = (stockId, value) => {
-        setPriceAdjustments(prev => ({
+    const handleShareAmountChange = (stockId, value) => {
+        setShareAmounts(prev => ({
             ...prev,
             [stockId]: value
         }));
     };
 
-    const getPriceAdjustmentValue = (stockId) => {
-        return priceAdjustments[stockId] || 10; // Default to 10 if no custom value
+    const getShareAmount = (stockId) => {
+        return shareAmounts[stockId] || 1; // Default to 1 share
     };
 
-    const handlePriceIncrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId);
-        const newPrice = currentPrice + parseFloat(adjustmentValue);
-        await updateStock(stockId, { newPrice });
+    const handleBuyStock = async (ticker, stockId) => {
+        const shares = getShareAmount(stockId);
+        if (shares > 0) {
+            await buyStock(ticker, shares);
+        }
     };
 
-    const handlePriceDecrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId);
-        const newPrice = Math.max(0.01, currentPrice - parseFloat(adjustmentValue)); // Ensure price doesn't go below 0.01
-        await updateStock(stockId, { newPrice });
+    const handleSellStock = async (ticker, stockId) => {
+        const shares = getShareAmount(stockId);
+        if (shares > 0) {
+            await sellStock(ticker, shares);
+        }
     };
 
     return (
-        <div className=" p-6">
+        <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-white">{title}</h3>
                 {showRefreshButton && (
                     <button
                         onClick={fetchAllStocks}
                         disabled={isStocksLoading}
-                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
+                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors hover:bg-gray-800/50"
                     >
-                        <RefreshCw size={16} className={isStocksLoading ? "animate-spin" : ""} />
+                        <TrendingUp size={16} className={isStocksLoading ? "animate-spin" : ""} />
                         Refresh
                     </button>
                 )}
@@ -114,7 +106,7 @@ const StockTable = ({
                 </div>
             ) : stocks.length === 0 ? (
                 <div className="text-gray-400 text-center py-8">
-                    No stocks found. Create your first stock using the form above.
+                    No stocks available for trading.
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -122,131 +114,74 @@ const StockTable = ({
                         <thead>
                             <tr className="border-b border-gray-700">
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Ticker</th>
-                                {showActions && (
-                                    <th className="text-center text-gray-300 font-medium py-3 px-4">Price Actions</th>
-                                )}
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Opening Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
                                 <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
-                                {showDeleteColumn && (
-                                    <th className="text-left text-gray-300 font-medium py-3 px-4">Delete</th>
-                                )}
+                                <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
+                                <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
+                                <th className="text-center text-gray-300 font-medium py-3 px-4">Trade Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {stocks.map((stock) => (
-                                <tr key={stock._id} className="border-b border-gray-800 ">
+                                <tr key={stock._id} className="border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
                                     <td className="py-4 px-4">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="block"
-                                        >
-                                            <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono hover:bg-green-600/30 transition-colors">
-                                                {stock.ticker}
-                                            </span>
-                                        </Link>
-                                    </td>
-                                    {showActions && (
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-center gap-1">
-                                                <button
-                                                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white p-1 rounded text-s font-semibold min-w-[30px] transition-colors"
-                                                    title={`Increase Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePriceIncrease(stock.ticker, stock.price, stock._id);
-                                                    }}
-                                                    disabled={updatingStock}
-                                                >
-                                                    {updatingStock ? (
-                                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mx-auto" />
-                                                    ) : (
-                                                        <ChevronUp className="size-3 m-auto" />
-                                                    )}
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    value={getPriceAdjustmentValue(stock._id)}
-                                                    onChange={(e) => handlePriceAdjustmentChange(stock._id, e.target.value)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="bg-transparent w-16 rounded px-1 py-1 text-white text-xs text-center focus:border-green-500 focus:outline-none"
-                                                    min="0.1"
-                                                    step="1"
-                                                    placeholder="10"
-                                                />
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-1 rounded text-xs font-semibold min-w-[30px] transition-colors"
-                                                    title={`Decrease Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePriceDecrease(stock.ticker, stock.price, stock._id);
-                                                    }}
-                                                    disabled={updatingStock}
-                                                >
-                                                    {updatingStock ? (
-                                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mx-auto" />
-                                                    ) : (
-                                                        <ChevronDown className="size-3 m-auto" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
-                                    <td className="py-4 px-4 text-left">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-green-400 font-semibold hover:text-green-300 transition-colors"
-                                        >
-                                            ${stock.price.toFixed(2)}
-                                        </Link>
-                                    </td>
-                                    <td className="py-4 px-4 text-left">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-gray-400 font-medium hover:text-gray-300 transition-colors"
-                                        >
-                                            ${stock.openingPrice ? stock.openingPrice.toFixed(2) : '0.00'}
-                                        </Link>
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="block"
-                                        >
-                                            {renderPriceChange(stock)}
-                                        </Link>
+                                        <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
+                                            {stock.ticker}
+                                        </span>
                                     </td>
                                     <td className="py-4 px-4 text-white">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-white hover:text-gray-300 transition-colors"
-                                        >
-                                            {stock.name}
-                                        </Link>
+                                        {stock.name}
                                     </td>
-
-                                    {showDeleteColumn && (
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
-                                                    title="Delete Stock"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(stock._id);
-                                                    }}
-                                                    disabled={deletingStockId === stock._id}
-                                                >
-                                                    {deletingStockId === stock._id ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
+                                    <td className="py-4 px-4 text-left">
+                                        <span className="text-green-400 font-semibold">
+                                            ${stock.price.toFixed(2)}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        {renderPriceChange(stock)}
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white p-2 rounded text-sm font-semibold min-w-[60px] transition-colors flex items-center justify-center gap-1"
+                                                title={`Buy ${getShareAmount(stock._id)} shares`}
+                                                onClick={() => handleBuyStock(stock.ticker, stock._id)}
+                                                disabled={isTrading}
+                                            >
+                                                {isTrading ? (
+                                                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <ShoppingCart size={14} />
+                                                        Buy
+                                                    </>
+                                                )}
+                                            </button>
+                                            <input
+                                                type="number"
+                                                value={getShareAmount(stock._id)}
+                                                onChange={(e) => handleShareAmountChange(stock._id, parseInt(e.target.value) || 1)}
+                                                className="bg-gray-700 border border-gray-600 w-20 rounded px-2 py-2 text-white text-sm text-center focus:border-green-500 focus:outline-none"
+                                                min="1"
+                                                step="1"
+                                                placeholder="1"
+                                            />
+                                            <button
+                                                className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded text-sm font-semibold min-w-[60px] transition-colors flex items-center justify-center gap-1"
+                                                title={`Sell ${getShareAmount(stock._id)} shares`}
+                                                onClick={() => handleSellStock(stock.ticker, stock._id)}
+                                                disabled={isTrading}
+                                            >
+                                                {isTrading ? (
+                                                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <TrendingUp size={14} />
+                                                        Sell
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -257,4 +192,4 @@ const StockTable = ({
     );
 };
 
-export default StockTable;
+export default UserStockTable;

@@ -7,7 +7,7 @@ import {
     ChartLine,
     History,
 } from 'lucide-react';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from '../../store/useAuthStore';
 
 const AdminSidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const location = useLocation();

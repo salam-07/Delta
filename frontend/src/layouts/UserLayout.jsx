@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import UserSidebar from "../components/UserSidebar";
+import UserSidebar from "../components/user/UserSidebar";
 import { useMarketStore } from '../store/useMarketStore';
 
 const UserLayout = ({ children, title = "Trader Dashboard" }) => {
