@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
-import { useMarketStore } from "../store/useMarketStore";
-import { useAdminStore } from "../store/useAdminStore";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useAdminStore } from "../../store/useAdminStore";
 
 const StockTable = ({
     showActions = true,

@@ -1,10 +1,8 @@
 import { useEffect } from 'react';
-import { TrendingUp, TrendingDown, Plus, Minus, AlertCircle } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { useMarketStore } from '../../store/useMarketStore';
-import { useAdminStore } from '../../store/useAdminStore';
-import StockTable from '../../components/StockTable';
-import DevTable from '../../components/DevTable';
+import StockTable from '../../components/admin/AdminStockTable';
+import DevTable from '../../components/admin/AdminDevTable';
 
 const AdminHome = () => {
     const { marketOpen,
