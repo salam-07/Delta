@@ -6,6 +6,7 @@ import {
     CircleDollarSign,
     ChartLine,
     History,
+    CircleQuestionMark,
 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -19,6 +20,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }) => {
         { id: 'trade', label: 'Buy and Sell Stocks', icon: ChartLine, path: '/user/trade' },
         { id: 'developments', label: 'Developments', icon: FileText, path: '/user/developments' },
         { id: 'history', label: 'Trading History', icon: History, path: '/user/history' },
+        { id: 'help', label: 'Help', icon: CircleQuestionMark, path: '/user/help' },
     ];
 
     const isActiveRoute = (path) => {

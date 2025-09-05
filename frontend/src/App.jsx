@@ -25,6 +25,7 @@ import UserTrade from "./pages/user/UserTrade";
 import UserDevelopments from "./pages/user/UserDevelopments";
 import UserHistory from "./pages/user/UserHistory";
 import UserDevelopmentView from "./pages/user/UserDevelopmentView";
+import UserHelp from "./pages/user/UserHelp";
 
 
 const App = () => {
@@ -84,7 +85,7 @@ const App = () => {
           <Route path="/user/developments" element={user ? <UserDevelopments /> : <Navigate to="/" />} />
           <Route path="/user/developments/:devId" element={user ? <UserDevelopmentView /> : <Navigate to="/" />} />
           <Route path="/user/history" element={user ? <UserHistory /> : <Navigate to="/" />} />
-
+          <Route path="/user/help" element={user ? <UserHelp /> : <Navigate to="/" />} />
 
         </Routes>
       </div>
