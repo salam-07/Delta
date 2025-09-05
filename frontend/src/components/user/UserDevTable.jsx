@@ -28,7 +28,6 @@ const DevTable = ({
             minute: '2-digit',
         });
     };
-
     return (
         <div className="p-6">
             {/* Header */}
@@ -65,7 +64,7 @@ const DevTable = ({
             ) : (
                 /* Responsive Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {devs.map((dev) => (
+                    {devs.filter(dev => dev.posted === true).map((dev) => (
                         <Link
                             key={dev._id}
                             to={`/user/developments/${dev._id}`}
@@ -75,12 +74,9 @@ const DevTable = ({
                             {dev.posted !== undefined && (
                                 <div className="flex justify-end mb-3">
                                     <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${dev.posted
-                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                            }`}
+                                        className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30"
                                     >
-                                        {dev.posted ? 'Published' : 'Draft'}
+                                        Published
                                     </span>
                                 </div>
                             )}
