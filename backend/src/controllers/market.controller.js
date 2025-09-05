@@ -5,7 +5,7 @@ import Development from "../models/development.model.js";
 
 export const viewAllStocks = async (req, res) => {
     try {
-        const stocks = await Stock.find({}); // select all that are not index
+        const stocks = await Stock.find({}).sort({ updatedAt: -1 }); // select all that are not index
         res.status(200).json(stocks);
     } catch (error) {
         console.log("Error in viewAllStocks Controller", error);
@@ -42,7 +42,7 @@ export const viewStockHistory = async (req, res) => {
 
 export const viewAllDevelopments = async (req, res) => {
     try {
-        const devs = await Development.find({});
+        const devs = await Development.find({}).sort({ createdAt: -1 });
         if (!devs) {
             return res.status(404).json({ message: "No Developments Found" });
         }
