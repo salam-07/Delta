@@ -20,6 +20,11 @@ import AdminTrades from "./pages/admin/AdminTrades";
 import AdminUsers from "./pages/admin/AdminUsers";
 
 import UserHome from "./pages/user/UserHome";
+import UserPortfolio from "./pages/user/UserPortfolio";
+import UserTrade from "./pages/user/UserTrade";
+import UserDevelopments from "./pages/user/UserDevelopments";
+import UserHistory from "./pages/user/UserHistory";
+
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, isAdmin } = useAuthStore();
@@ -55,7 +60,7 @@ const App = () => {
             element={
               !authUser ? <Navigate to="/login" /> :
                 admin ? <Navigate to="/admin" /> :
-                  user ? <Navigate to="/home" /> :
+                  user ? <Navigate to="/user" /> :
                     <Navigate to="/login" />
             } />
 
@@ -72,7 +77,12 @@ const App = () => {
           <Route path="/admin/trades" element={admin ? <AdminTrades /> : <Navigate to="/"> </Navigate>} />
           <Route path="/admin/users" element={admin ? <AdminUsers /> : <Navigate to="/"> </Navigate>} />
 
-          <Route path="/home" element={user ? <UserHome /> : <Navigate to="/" />} />
+          <Route path="/user" element={user ? <UserHome /> : <Navigate to="/" />} />
+          <Route path="/user/portfolio" element={user ? <UserPortfolio /> : <Navigate to="/" />} />
+          <Route path="/user/trade" element={user ? <UserTrade /> : <Navigate to="/" />} />
+          <Route path="/user/developments" element={user ? <UserDevelopments /> : <Navigate to="/" />} />
+          <Route path="/user/history" element={user ? <UserHistory /> : <Navigate to="/" />} />
+
 
         </Routes>
       </div>
