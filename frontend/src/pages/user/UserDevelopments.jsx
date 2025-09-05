@@ -21,7 +21,6 @@ const UserDevelopments = () => {
 
     return (
         <UserLayout>
-            <div>UserDevelopments</div>
             <DevTable
                 devs={devs}
                 isLoading={isDevsLoading}

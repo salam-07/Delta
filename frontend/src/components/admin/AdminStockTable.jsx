@@ -172,7 +172,7 @@ const StockTable = ({
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="bg-transparent w-16 rounded px-1 py-1 text-white text-xs text-center focus:border-green-500 focus:outline-none"
                                                     min="0.1"
-                                                    step="1"
+                                                    step="0.1"
                                                     placeholder="10"
                                                 />
                                                 <button

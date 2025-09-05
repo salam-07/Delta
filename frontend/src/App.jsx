@@ -24,6 +24,7 @@ import UserPortfolio from "./pages/user/UserPortfolio";
 import UserTrade from "./pages/user/UserTrade";
 import UserDevelopments from "./pages/user/UserDevelopments";
 import UserHistory from "./pages/user/UserHistory";
+import UserDevelopmentView from "./pages/user/UserDevelopmentView";
 
 
 const App = () => {
@@ -81,6 +82,7 @@ const App = () => {
           <Route path="/user/portfolio" element={user ? <UserPortfolio /> : <Navigate to="/" />} />
           <Route path="/user/trade" element={user ? <UserTrade /> : <Navigate to="/" />} />
           <Route path="/user/developments" element={user ? <UserDevelopments /> : <Navigate to="/" />} />
+          <Route path="/user/developments/:devId" element={user ? <UserDevelopmentView /> : <Navigate to="/" />} />
           <Route path="/user/history" element={user ? <UserHistory /> : <Navigate to="/" />} />
 
 
