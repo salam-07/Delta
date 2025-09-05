@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
+import { useMarketStore } from "./useMarketStore.js";
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
@@ -154,8 +155,13 @@ export const useTradeStore = create((set, get) => ({
     // Helper Methods
     getPortfolioValue: () => {
         const { portfolio } = get();
+        const { stocks } = useMarketStore.getState();
+
         return portfolio.reduce((total, stock) => {
-            const stockValue = (stock.amount || 0) * (stock.tradePrice || 0);
+            // Find current market price for this stock
+            const currentStock = stocks.find(s => s.ticker === stock.ticker);
+            const currentPrice = currentStock ? parseFloat(currentStock.price) : 0;
+            const stockValue = (stock.amount || 0) * currentPrice;
             return total + stockValue;
         }, 0);
     },
@@ -165,6 +171,14 @@ export const useTradeStore = create((set, get) => ({
         return portfolio.find(stock => stock.ticker === ticker) || null;
     },
 
+    getTotalInvested: () => {
+        const { portfolio } = get();
+        return portfolio.reduce((total, stock) => {
+            const investedValue = (stock.amount || 0) * (stock.tradePrice || 0);
+            return total + investedValue;
+        }, 0);
+    },
+
     getTotalAssets: () => {
         const { balance } = get();
         const portfolioValue = get().getPortfolioValue();
@@ -172,8 +186,25 @@ export const useTradeStore = create((set, get) => ({
     },
 
     getProfitLoss: () => {
-        const currentAssets = get().getTotalAssets();
-        return currentAssets - 1000;
+        const { portfolio } = get();
+        const { stocks } = useMarketStore.getState();
+
+        // Calculate total invested amount using original trade prices
+        const totalInvested = portfolio.reduce((total, stock) => {
+            const investedValue = (stock.amount || 0) * (stock.tradePrice || 0);
+            return total + investedValue;
+        }, 0);
+
+        // Calculate current portfolio value using market prices
+        const currentPortfolioValue = portfolio.reduce((total, stock) => {
+            const currentStock = stocks.find(s => s.ticker === stock.ticker);
+            const currentPrice = currentStock ? parseFloat(currentStock.price) : 0;
+            const currentValue = (stock.amount || 0) * currentPrice;
+            return total + currentValue;
+        }, 0);
+
+        // P&L is the difference between current value and invested amount
+        return currentPortfolioValue - totalInvested;
     },
 
     // Reset Methods

@@ -12,6 +12,7 @@ const UserPortfolio = () => {
         checkBalance,
         getTotalAssets,
         getPortfolioValue,
+        getProfitLoss,
         isLoadingPortfolio,
         isLoadingBalance
     } = useTradeStore();
@@ -84,57 +85,85 @@ const UserPortfolio = () => {
                     </button>
                 </div>
 
-                {/* Portfolio Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Total Portfolio Value */}
-                    <div className=" p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-green-400 text-sm font-medium">Portfolio Value</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {isLoading ? (
-                                        <div className="w-24 h-8 animate-pulse"></div>
-                                    ) : (
-                                        `$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    )}
-                                </p>
-                            </div>
-                            <PieChart className="w-8 h-8 text-green-400" />
-                        </div>
-                    </div>
-
-                    {/* Cash Balance */}
+                {/* Top Section - Total Assets and Performance */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left - Total Assets */}
                     <div className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-green-400 text-sm font-medium">Cash Balance</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {isLoading ? (
-                                        <div className="w-24 h-8 animate-pulse rounded"></div>
-                                    ) : (
-                                        `$${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    )}
-                                </p>
+                        <div className="text-center lg:text-left">
+                            <h3 className="text-lg font-medium text-gray-400 mb-4">Net Worth</h3>
+                            <div className="text-6xl lg:text-8xl font-bold text-white mb-2">
+                                {`$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                             </div>
-                            <Wallet className="w-8 h-8 text-green-400" />
                         </div>
                     </div>
 
-                    {/* Total Assets */}
-                    <div className=" p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-green-400 text-sm font-medium">Net Worth</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {isLoading ? (
-                                        <div className="w-24 h-8 animate-pulse rounded"></div>
-                                    ) : (
-                                        `$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    )}
-                                </p>
+                    {/* Right - Performance */}
+                    <div className="p-6">
+                        <div className="text-center lg:text-right">
+                            <h3 className="text-lg font-medium text-gray-400 mb-4">Performance</h3>
+                            <div className="flex flex-col items-center lg:items-end">
+                                {isLoading ? (
+                                    <div className="w-40 h-24 bg-gray-700 animate-pulse rounded-lg"></div>
+                                ) : (
+                                    (() => {
+                                        const profitLoss = getProfitLoss();
+                                        const profitLossPercentage = totalAssets > 0 ? ((profitLoss / (totalAssets - profitLoss)) * 100) : 0;
+                                        const isProfit = profitLoss >= 0;
+
+                                        return (
+                                            <div className={`flex flex-col ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    {isProfit ? <TrendingUp size={64} /> : <TrendingDown size={64} />}
+                                                    <span className="text-6xl lg:text-8xl font-bold">
+                                                        {isProfit ? '+' : ''}{profitLossPercentage.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                                <p className="text-xl md:text-2xl font-medium text-gray-300 text-right">
+                                                    {isProfit ? '+' : ''}${Math.abs(profitLoss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        );
+                                    })()
+                                )}
                             </div>
-                            <TrendingUp className="w-8 h-8 text-green-400" />
                         </div>
+                    </div>
+                </div>
+
+                {/* Portfolio Summary */}
+                <div className="p-8">
+                    <div className="flex flex-row justify-between items-center lg:items-center gap-8">
+                        {/* Left Side - Financial Metrics */}
+                        <div className="flex-1 space-y-6">
+
+                            {/* Cash Balance & Portfolio Value */}
+                            <div className="flex flex-col sm:flex-row gap-6 lg:gap-12">
+                                {/* Cash Balance */}
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-medium tracking-wide uppercase mb-2">Cash Balance</p>
+                                    <p className="text-2xl md:text-3xl lg:text-4xl font-semibold text-green-400">
+                                        {isLoading ? (
+                                            <div className="w-32 h-10 bg-gray-700 animate-pulse rounded"></div>
+                                        ) : (
+                                            `$${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                                        )}
+                                    </p>
+                                </div>
+
+                                {/* Portfolio Value */}
+                                <div className="flex-1">
+                                    <p className="text-gray-500 text-xs font-medium tracking-wide uppercase mb-2">Portfolio Value</p>
+                                    <p className="text-2xl md:text-3xl lg:text-4xl font-semibold text-green-400">
+                                        {isLoading ? (
+                                            <div className="w-32 h-10 bg-gray-700 animate-pulse rounded"></div>
+                                        ) : (
+                                            `$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -175,7 +204,7 @@ const UserPortfolio = () => {
                                     <tr className="border-b border-gray-700">
                                         <th className="text-left text-gray-300 font-medium py-3 px-4">Stock</th>
                                         <th className="text-right text-gray-300 font-medium py-3 px-4">Shares</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Avg. Price</th>
+                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Buy Price</th>
                                         <th className="text-right text-gray-300 font-medium py-3 px-4">Current Price</th>
                                         <th className="text-right text-gray-300 font-medium py-3 px-4">Market Value</th>
                                         <th className="text-right text-gray-300 font-medium py-3 px-4">P&L</th>
