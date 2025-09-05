@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, TrendingUp } from "lucide-react";
+import { RefreshCcw, ShoppingCart, TrendingUp } from "lucide-react";
 import { useMarketStore } from "../../store/useMarketStore";
 import { useTradeStore } from "../../store/useTradeStore";
 
@@ -91,7 +91,7 @@ const UserStockTable = ({
                         disabled={isStocksLoading}
                         className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors hover:bg-gray-800/50"
                     >
-                        <TrendingUp size={16} className={isStocksLoading ? "animate-spin" : ""} />
+                        <RefreshCcw size={16} className={isStocksLoading ? "animate-spin" : ""} />
                         Refresh
                     </button>
                 )}
@@ -122,7 +122,7 @@ const UserStockTable = ({
                         </thead>
                         <tbody>
                             {stocks.map((stock) => (
-                                <tr key={stock._id} className="border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
+                                <tr key={stock._id} className="border-b border-gray-800 hover:bg-primary/5 transition-colors">
                                     <td className="py-4 px-4">
                                         <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
                                             {stock.ticker}
@@ -160,7 +160,7 @@ const UserStockTable = ({
                                                 type="number"
                                                 value={getShareAmount(stock._id)}
                                                 onChange={(e) => handleShareAmountChange(stock._id, parseInt(e.target.value) || 1)}
-                                                className="bg-gray-700 border border-gray-600 w-20 rounded px-2 py-2 text-white text-sm text-center focus:border-green-500 focus:outline-none"
+                                                className="bg-transparent w-20 rounded px-2 py-2 text-white text-sm text-center focus:border-green-500 focus:outline-none"
                                                 min="1"
                                                 step="1"
                                                 placeholder="1"

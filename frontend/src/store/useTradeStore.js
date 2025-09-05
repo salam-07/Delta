@@ -171,6 +171,11 @@ export const useTradeStore = create((set, get) => ({
         return balance + portfolioValue;
     },
 
+    getProfitLoss: () => {
+        const currentAssets = get().getTotalAssets();
+        return currentAssets - 1000;
+    },
+
     // Reset Methods
     resetTradeStore: () => {
         set({
