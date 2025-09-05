@@ -28,7 +28,7 @@ app.use(cors(
         origin: function (origin, callback) {
             // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
-            
+
             // Allow localhost and any IP on local network
             const allowedOrigins = [
                 'http://localhost:5173',
@@ -37,7 +37,7 @@ app.use(cors(
                 /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:5173$/,  // 10.x.x.x:5173
                 /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}:5173$/  // 172.16-31.x.x:5173
             ];
-            
+
             const isAllowed = allowedOrigins.some(allowedOrigin => {
                 if (typeof allowedOrigin === 'string') {
                     return origin === allowedOrigin;
@@ -45,7 +45,7 @@ app.use(cors(
                     return allowedOrigin.test(origin);
                 }
             });
-            
+
             if (isAllowed) {
                 callback(null, true);
             } else {

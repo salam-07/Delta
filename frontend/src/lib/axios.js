@@ -8,16 +8,16 @@ const getBaseURL = () => {
         if (apiUrl) {
             return `${apiUrl}/api`;
         }
-        
+
         // For network access, use the current host's IP if not localhost
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             return `http://${window.location.hostname}:5001/api`;
         }
-        
+
         // Default to localhost for development
         return "http://localhost:5001/api";
     }
-    
+
     // Production
     return "/api";
 };
