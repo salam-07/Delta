@@ -16,6 +16,9 @@ export const useAdminStore = create((set, get) => ({
     deletingStockId: null,
     deletingDevId: null,
 
+    isUsersLoading: false,
+    users: [],
+
     createStock: async (data) => {
         set({ creatingStock: true });
         try {
@@ -116,6 +119,19 @@ export const useAdminStore = create((set, get) => ({
             console.error("Error updating development status:", error);
         } finally {
             set({ postingDev: false });
+        }
+    },
+
+    getAllUsers: async () => {
+        set({ isUsersLoading: true });
+        try {
+            const res = await axiosInstance.get("/admin/users");
+            set({ users: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to get users");
+            console.error("Error getting users:", error);
+        } finally {
+            set({ isUsersLoading: false });
         }
     },
 }));
