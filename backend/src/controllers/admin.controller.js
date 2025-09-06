@@ -233,3 +233,163 @@ export const setMarketStatus = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+export const getAnalytics = async (req, res) => {
+    try {
+        // === USER ANALYTICS ===
+        const totalUsers = await User.countDocuments({ role: { $ne: "admin" } });
+
+        // User balances and portfolio analytics
+        const users = await User.find({ role: { $ne: "admin" } });
+        const totalCashBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
+        const usersWithPortfolio = users.filter(user => user.portfolio && user.portfolio.length > 0).length;
+
+        // === STOCK ANALYTICS ===
+        const totalStocks = await Stock.countDocuments({});
+        const stocks = await Stock.find({});
+        const stocksWithPriceIncrease = stocks.filter(stock =>
+            stock.price > stock.openingPrice
+        ).length;
+        const stocksWithPriceDecrease = stocks.filter(stock =>
+            stock.price < stock.openingPrice
+        ).length;
+
+        // === TRADING ANALYTICS ===
+        const totalTrades = await Trade.countDocuments({});
+
+        // Trade volume analytics
+        const allTrades = await Trade.find({});
+        const totalTradeVolume = allTrades.reduce((sum, trade) =>
+            sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0
+        );
+        const buyTrades = allTrades.filter(trade => trade.type === 'buy').length;
+        const sellTrades = allTrades.filter(trade => trade.type === 'sell').length;
+
+        const tradesTodayData = await Trade.find({ createdAt: { $gte: startOfToday } });
+        const volumeToday = tradesTodayData.reduce((sum, trade) =>
+            sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0
+        );
+
+        // === MARKET ANALYTICS ===
+        const marketStatus = await Market.findOne({});
+        const isMarketOpen = marketStatus ? marketStatus.isOpen : false;
+
+        // === DEVELOPMENT ANALYTICS ===
+        const totalDevelopments = await Development.countDocuments({});
+        const publishedDevelopments = await Development.countDocuments({ posted: true });
+        const draftDevelopments = await Development.countDocuments({ posted: false });
+
+        // === PORTFOLIO ANALYTICS ===
+        let totalPortfolioValue = 0;
+        let totalInvestedUsers = 0;
+        let mostHeldStock = { ticker: 'N/A', count: 0 };
+        const stockHoldings = {};
+
+        for (const user of users) {
+            if (user.portfolio && user.portfolio.length > 0) {
+                totalInvestedUsers++;
+
+                for (const holding of user.portfolio) {
+                    const stock = stocks.find(s => s.ticker === holding.ticker);
+                    if (stock) {
+                        const currentValue = stock.price * holding.amount;
+                        totalPortfolioValue += currentValue;
+
+                        // Track stock popularity
+                        stockHoldings[holding.ticker] = (stockHoldings[holding.ticker] || 0) + 1;
+                    }
+                }
+            }
+        }
+
+        // Find most held stock
+        if (Object.keys(stockHoldings).length > 0) {
+            const mostHeld = Object.entries(stockHoldings).reduce((a, b) =>
+                stockHoldings[a[0]] > stockHoldings[b[0]] ? a : b
+            );
+            mostHeldStock = { ticker: mostHeld[0], count: mostHeld[1] };
+        }
+
+        // === RECENT ACTIVITY ===
+        const recentTrades = await Trade.find({})
+            .populate('traderId', 'fullName')
+            .populate('stockId', 'ticker')
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        // === TOP PERFORMING STOCKS ===
+        const topPerformingStocks = stocks
+            .map(stock => ({
+                ticker: stock.ticker,
+                name: stock.name,
+                currentPrice: stock.price,
+                openingPrice: stock.openingPrice,
+                change: stock.price - stock.openingPrice,
+                changePercent: stock.openingPrice > 0 ?
+                    (((stock.price - stock.openingPrice) / stock.openingPrice) * 100) : 0
+            }))
+            .sort((a, b) => b.changePercent - a.changePercent)
+            .slice(0, 5);
+
+        // Compile comprehensive analytics response
+        const analytics = {
+            overview: {
+                totalUsers,
+                totalStocks,
+                totalTrades,
+                totalTradeVolume,
+                totalCashBalance,
+                totalPortfolioValue,
+                totalAssets: totalCashBalance + totalPortfolioValue,
+                marketOpen: isMarketOpen
+            },
+            userMetrics: {
+                totalUsers,
+                usersWithPortfolio,
+                totalInvestedUsers,
+            },
+            tradingMetrics: {
+                totalTrades,
+                buyTrades,
+                sellTrades,
+                totalTradeVolume,
+                averageTradeSize: parseFloat(averageTradeSize.toFixed(2))
+            },
+            stockMetrics: {
+                totalStocks,
+                stocksWithPriceIncrease,
+                stocksWithPriceDecrease,
+                mostHeldStock,
+                topPerformingStocks
+            },
+            contentMetrics: {
+                totalDevelopments,
+                publishedDevelopments,
+                draftDevelopments
+            },
+            recentActivity: {
+                recentTrades: recentTrades.map(trade => ({
+                    traderName: trade.traderId?.fullName || 'Unknown',
+                    stockTicker: trade.stockId?.ticker || 'Unknown',
+                    type: trade.type,
+                    amount: trade.amount,
+                    price: trade.tradePrice,
+                    date: trade.createdAt
+                }))
+            },
+            systemHealth: {
+                marketOpen: isMarketOpen,
+                totalSystemValue: totalCashBalance + totalPortfolioValue,
+                activeUsersPercentage: parseFloat(tradingActivityRate.toFixed(2)),
+                averageDailyTrades: parseFloat((totalTrades / Math.max(1,
+                    Math.ceil((now - new Date(Math.min(...users.map(u => new Date(u.createdAt))))) / (1000 * 60 * 60 * 24)))).toFixed(2))
+            }
+        };
+
+        res.status(200).json(analytics);
+
+    } catch (error) {
+        console.log("Error in getAnalytics controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};

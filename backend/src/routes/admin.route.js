@@ -11,7 +11,8 @@ import {
     postDevelopment,
     showUsers,
     showTradingHistory,
-    setMarketStatus
+    setMarketStatus,
+    getAnalytics
 } from "../controllers/admin.controller.js";
 
 // admin only route checking
@@ -36,5 +37,8 @@ router.get("/tradehistory", adminRoute, showTradingHistory);
 
 // market status management
 router.put("/marketstatus", adminRoute, setMarketStatus);
+
+// analytics
+router.get("/analytics", adminRoute, getAnalytics);
 
 export default router;
