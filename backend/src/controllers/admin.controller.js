@@ -265,10 +265,8 @@ export const getAnalytics = async (req, res) => {
         const buyTrades = allTrades.filter(trade => trade.type === 'buy').length;
         const sellTrades = allTrades.filter(trade => trade.type === 'sell').length;
 
-        const tradesTodayData = await Trade.find({ createdAt: { $gte: startOfToday } });
-        const volumeToday = tradesTodayData.reduce((sum, trade) =>
-            sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0
-        );
+        // Calculate average trade size
+        const averageTradeSize = totalTrades > 0 ? (totalTradeVolume / totalTrades) : 0;
 
         // === MARKET ANALYTICS ===
         const marketStatus = await Market.findOne({});
@@ -309,6 +307,9 @@ export const getAnalytics = async (req, res) => {
             );
             mostHeldStock = { ticker: mostHeld[0], count: mostHeld[1] };
         }
+
+        // Calculate trading activity rate
+        const tradingActivityRate = totalUsers > 0 ? ((totalInvestedUsers / totalUsers) * 100) : 0;
 
         // === RECENT ACTIVITY ===
         const recentTrades = await Trade.find({})
@@ -381,8 +382,6 @@ export const getAnalytics = async (req, res) => {
                 marketOpen: isMarketOpen,
                 totalSystemValue: totalCashBalance + totalPortfolioValue,
                 activeUsersPercentage: parseFloat(tradingActivityRate.toFixed(2)),
-                averageDailyTrades: parseFloat((totalTrades / Math.max(1,
-                    Math.ceil((now - new Date(Math.min(...users.map(u => new Date(u.createdAt))))) / (1000 * 60 * 60 * 24)))).toFixed(2))
             }
         };
 
