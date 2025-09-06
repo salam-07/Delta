@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios.js";
 
 export const useMarketStore = create((set, get) => ({
     marketOpen: false,
-    isMarketOpening: false,
+    isMarketStatusLoading: false,
 
     stocks: [],
     stock: null,
@@ -19,25 +19,41 @@ export const useMarketStore = create((set, get) => ({
     history: [],
     isHistoryLoading: false,
 
-    setMarketOpen: async (marketOpen) => {
-        set({ isMarketOpening: true });
+    // Fetch market status from backend
+    fetchMarketStatus: async () => {
+        set({ isMarketStatusLoading: true });
         try {
-            set({ marketOpen });
-            if (marketOpen) {
-                toast.success("Market Open for Trading");
-            } else {
-                toast.success("Market Closed for Trading");
-            }
+            const res = await axiosInstance.get("/market/status");
+            set({ marketOpen: res.data.isOpen });
         } catch (error) {
-            toast.error("Failed to change market status");
+            toast.error("Failed to fetch market status");
+            console.error("Error fetching market status:", error);
         } finally {
-            set({ isMarketOpening: false });
+            set({ isMarketStatusLoading: false });
         }
     },
 
-    toggleMarket: async () => {
-        const { marketOpen, setMarketOpen } = get();
-        await setMarketOpen(!marketOpen);
+    // Set market status (admin only)
+    setMarketStatus: async (isOpen) => {
+        set({ isMarketStatusLoading: true });
+        try {
+            const res = await axiosInstance.put("/admin/marketstatus", { isOpen });
+            set({ marketOpen: isOpen });
+            toast.success(res.data.message);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to change market status");
+            console.error("Error setting market status:", error);
+        } finally {
+            set({ isMarketStatusLoading: false });
+        }
+    },
+
+    // Toggle market status (admin only)
+    toggleMarketStatus: async () => {
+        const { marketOpen, setMarketStatus, fetchMarketStatus } = get();
+        await setMarketStatus(!marketOpen);
+        // Refresh the market status from backend to ensure consistency
+        await fetchMarketStatus();
     },
 
     fetchAllStocks: async () => {

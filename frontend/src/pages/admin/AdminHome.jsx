@@ -6,18 +6,20 @@ import DevTable from '../../components/admin/AdminDevTable';
 
 const AdminHome = () => {
     const { marketOpen,
-        toggleMarket,
-        isMarketOpening,
+        toggleMarketStatus,
+        isMarketStatusLoading,
+        fetchMarketStatus,
         fetchAllStocks,
         stocks,
         devs,
         isDevsLoading,
         fetchAllDev } = useMarketStore();
 
-    // Fetch stocks on component mount
+    // Fetch data on component mount
     useEffect(() => {
         fetchAllStocks();
-    }, [fetchAllStocks]);
+        fetchMarketStatus();
+    }, [fetchAllStocks, fetchMarketStatus]);
 
     const handleToggleStatus = async (devId, currentStatus) => {
         // Convert currentStatus string to boolean and invert it
@@ -39,14 +41,14 @@ const AdminHome = () => {
                         <div className="p-6 rounded-lg h-full flex flex-col justify-center">
                             <h3 className="text-lg font-semibold text-white mb-4 text-center">Control Market Status</h3>
                             <button
-                                onClick={toggleMarket}
-                                disabled={isMarketOpening}
+                                onClick={toggleMarketStatus}
+                                disabled={isMarketStatusLoading}
                                 className={`w-full h-32 rounded-lg font-bold text-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${marketOpen
                                     ? 'bg-red-600 hover:bg-red-700 text-white'
                                     : 'bg-green-600 hover:bg-green-700 text-white'
                                     }`}
                             >
-                                {isMarketOpening ? 'UPDATING...' : (marketOpen ? 'CLOSE MARKET' : 'OPEN MARKET')}
+                                {isMarketStatusLoading ? 'UPDATING...' : (marketOpen ? 'CLOSE MARKET' : 'OPEN MARKET')}
                             </button>
                             <p className="text-sm text-gray-400 text-center mt-4">
                                 Current Status: <span className={marketOpen ? 'text-green-400' : 'text-red-400'}>
