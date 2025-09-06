@@ -51,7 +51,7 @@ const AdminTrades = () => {
                     <button
                         onClick={getTradeHistory}
                         disabled={isTradeHistoryLoading}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors"
                     >
                         <RefreshCw size={16} className={isTradeHistoryLoading ? "animate-spin" : ""} />
                         Refresh
@@ -73,10 +73,10 @@ const AdminTrades = () => {
                 </div>
 
                 {/* Trade History List */}
-                <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+                <div className="overflow-hidden">
                     {isTradeHistoryLoading && tradeHistory.length === 0 ? (
                         <div className="flex items-center justify-center py-12">
-                            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
                             <span className="ml-3 text-gray-400">Loading trade history...</span>
                         </div>
                     ) : tradeHistory.length === 0 ? (
@@ -92,13 +92,13 @@ const AdminTrades = () => {
                                 {tradeHistory.slice(0, visibleTrades).map((trade, index) => (
                                     <div
                                         key={trade._id || index}
-                                        className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors"
+                                        className="flex items-center justify-between p-2"
                                     >
                                         <div className="flex items-center gap-4">
                                             {/* Trade Type Icon */}
                                             <div className={`p-2 rounded-full ${trade.type?.toLowerCase() === 'buy'
-                                                    ? 'bg-green-500/20 text-green-400'
-                                                    : 'bg-red-500/20 text-red-400'
+                                                ? 'bg-green-500/20 text-green-400'
+                                                : 'bg-red-500/20 text-red-400'
                                                 }`}>
                                                 {trade.type?.toLowerCase() === 'buy' ? (
                                                     <TrendingUp size={20} />
@@ -109,7 +109,7 @@ const AdminTrades = () => {
 
                                             {/* Trade Text */}
                                             <div>
-                                                <p className="text-white font-medium text-lg">
+                                                <p className="text-white font-medium text-md">
                                                     {formatTradeText(trade)}
                                                 </p>
                                                 <p className="text-gray-400 text-sm">
@@ -133,7 +133,7 @@ const AdminTrades = () => {
                                 <div className="border-t border-gray-700 p-6 text-center">
                                     <button
                                         onClick={loadMoreTrades}
-                                        className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+                                        className="bg-green-800 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
                                     >
                                         Load More Trades ({tradeHistory.length - visibleTrades} remaining)
                                     </button>
@@ -146,7 +146,7 @@ const AdminTrades = () => {
                 {/* Summary Stats */}
                 {!isTradeHistoryLoading && tradeHistory.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                        <div className=" rounded-lg p-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <TrendingUp className="text-green-400" size={20} />
                                 <span className="text-sm font-medium text-gray-400">Buy Orders</span>
@@ -156,7 +156,7 @@ const AdminTrades = () => {
                             </div>
                         </div>
 
-                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                        <div className=" rounded-lg p-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <TrendingDown className="text-red-400" size={20} />
                                 <span className="text-sm font-medium text-gray-400">Sell Orders</span>
@@ -166,22 +166,22 @@ const AdminTrades = () => {
                             </div>
                         </div>
 
-                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                        <div className=" rounded-lg p-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <TrendingUp className="text-blue-400" size={20} />
                                 <span className="text-sm font-medium text-gray-400">Total Volume</span>
                             </div>
-                            <div className="text-2xl font-bold text-blue-400">
+                            <div className="text-2xl font-bold text-white">
                                 ${tradeHistory.reduce((sum, trade) => sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
 
-                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+                        <div className=" rounded-lg p-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <TrendingUp className="text-yellow-400" size={20} />
                                 <span className="text-sm font-medium text-gray-400">Avg. Trade Size</span>
                             </div>
-                            <div className="text-2xl font-bold text-yellow-400">
+                            <div className="text-2xl font-bold text-white">
                                 ${tradeHistory.length > 0 ? (tradeHistory.reduce((sum, trade) => sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0) / tradeHistory.length).toFixed(2) : '0.00'}
                             </div>
                         </div>
