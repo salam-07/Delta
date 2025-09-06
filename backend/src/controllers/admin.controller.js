@@ -191,13 +191,15 @@ export const showUsers = async (req, res) => {
 
 export const showTradingHistory = async (req, res) => {
     try {
-        const history = await Trade.find({});
+        const history = await Trade.find({})
+            .populate('traderId', 'fullName name email')
+            .populate('stockId', 'ticker name')
+            .sort({ createdAt: -1 });
         res.status(200).json(history);
 
     } catch (error) {
         console.log("Error in showTradingHistory controller", error);
         res.status(500).json({ error: "Internal Server Error" });
-
     }
 };
 

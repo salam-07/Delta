@@ -19,6 +19,9 @@ export const useAdminStore = create((set, get) => ({
     isUsersLoading: false,
     users: [],
 
+    isTradeHistoryLoading: false,
+    tradeHistory: [],
+
 
     createStock: async (data) => {
         set({ creatingStock: true });
@@ -133,6 +136,19 @@ export const useAdminStore = create((set, get) => ({
             console.error("Error getting users:", error);
         } finally {
             set({ isUsersLoading: false });
+        }
+    },
+
+    getTradeHistory: async () => {
+        set({ isTradeHistoryLoading: true });
+        try {
+            const res = await axiosInstance.get("/admin/tradehistory");
+            set({ tradeHistory: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to get trade history");
+            console.error("Error getting trade history:", error);
+        } finally {
+            set({ isTradeHistoryLoading: false });
         }
     },
 }));
