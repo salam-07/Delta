@@ -1,6 +1,7 @@
 import Stock from "../models/stock.model.js";
 import History from "../models/history.model.js";
 import Development from "../models/development.model.js";
+import Market from "../models/market.model.js";
 
 
 export const viewAllStocks = async (req, res) => {
@@ -62,5 +63,25 @@ export const viewDevelopment = async (req, res) => {
     } catch (error) {
         console.log("Error in viewDevelopment Controller", error);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getMarketStatus = async (req, res) => {
+    try {
+        let market = await Market.findOne({});
+
+        if (!market) {
+            // If no market status exists, create one with default closed status
+            market = new Market({ isOpen: false });
+            await market.save();
+        }
+
+        res.status(200).json({
+            isOpen: market.isOpen
+        });
+
+    } catch (error) {
+        console.log("Error in getMarketStatus controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };

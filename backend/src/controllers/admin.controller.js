@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import Development from "../models/development.model.js";
 import History from "../models/history.model.js";
 import Trade from "../models/trade.model.js";
+import Market from "../models/market.model.js";
 
 export const createStock = async (req, res) => {
 
@@ -197,5 +198,36 @@ export const showTradingHistory = async (req, res) => {
         console.log("Error in showTradingHistory controller", error);
         res.status(500).json({ error: "Internal Server Error" });
 
+    }
+};
+
+export const setMarketStatus = async (req, res) => {
+    try {
+        const { isOpen } = req.body;
+
+        if (typeof isOpen !== 'boolean') {
+            return res.status(400).json({ message: "isOpen must be a boolean value" });
+        }
+
+        // Find existing market status or create new one
+        let market = await Market.findOne({});
+
+        if (market) {
+            market.isOpen = isOpen;
+            await market.save();
+        } else {
+            // Create new market status if none exists
+            market = new Market({ isOpen });
+            await market.save();
+        }
+
+        res.status(200).json({
+            message: `Market ${isOpen ? 'opened' : 'closed'} successfully`,
+            isOpen: market.isOpen
+        });
+
+    } catch (error) {
+        console.log("Error in setMarketStatus controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };

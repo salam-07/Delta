@@ -10,7 +10,8 @@ import {
     deleteDevelopment,
     postDevelopment,
     showUsers,
-    showTradingHistory
+    showTradingHistory,
+    setMarketStatus
 } from "../controllers/admin.controller.js";
 
 // admin only route checking
@@ -32,5 +33,8 @@ router.put("/postdev/:id", adminRoute, postDevelopment);
 // management related routes
 router.get("/users", adminRoute, showUsers);
 router.get("/tradehistory", adminRoute, showTradingHistory);
+
+// market status management
+router.put("/marketstatus", adminRoute, setMarketStatus);
 
 export default router;

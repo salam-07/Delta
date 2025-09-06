@@ -2,9 +2,22 @@ import User from "../models/user.model.js";
 import Stock from "../models/stock.model.js";
 import Trade from "../models/trade.model.js";
 import History from "../models/history.model.js";
+import Market from "../models/market.model.js";
+
+// Helper function to check if market is open
+const checkMarketStatus = async () => {
+    const market = await Market.findOne({});
+    return market ? market.isOpen : false; // Default to closed if no market status exists
+};
 
 export const buy = async (req, res) => {
     try {
+        // Check if market is open
+        const isMarketOpen = await checkMarketStatus();
+        if (!isMarketOpen) {
+            return res.status(400).json({ message: "Market is currently closed. Trading is not available." });
+        }
+
         const { ticker, amount } = req.body;
         const traderId = req.user._id;
         // Get the stock document
@@ -75,6 +88,12 @@ export const buy = async (req, res) => {
 
 export const sell = async (req, res) => {
     try {
+        // Check if market is open
+        const isMarketOpen = await checkMarketStatus();
+        if (!isMarketOpen) {
+            return res.status(400).json({ message: "Market is currently closed. Trading is not available." });
+        }
+
         const { ticker, amount } = req.body;
         const traderId = req.user._id;
         // Get the stock document

@@ -5,7 +5,8 @@ import {
     viewStock,
     viewAllDevelopments,
     viewDevelopment,
-    viewStockHistory
+    viewStockHistory,
+    getMarketStatus
 } from "../controllers/market.controller.js";
 
 import { protectRoute } from "../middleware/auth.middleware.js";
@@ -19,5 +20,7 @@ router.get("/history/:id", protectRoute, viewStockHistory);
 
 router.get("/viewdevs", protectRoute, viewAllDevelopments);
 router.get("/viewdev/:id", protectRoute, viewDevelopment);
+
+router.get("/status", protectRoute, getMarketStatus);
 
 export default router;
