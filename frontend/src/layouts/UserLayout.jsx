@@ -6,14 +6,15 @@ import { useTradeStore } from '../store/useTradeStore';
 
 const UserLayout = ({ children, title = "Trader Dashboard" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { marketOpen } = useMarketStore();
+    const { marketOpen, fetchMarketStatus } = useMarketStore();
     const { balance, getTotalAssets, checkBalance, viewPortfolio, isLoadingBalance, isLoadingPortfolio } = useTradeStore();
 
     // Initialize data on mount
     useEffect(() => {
         checkBalance();
         viewPortfolio();
-    }, [checkBalance, viewPortfolio]);
+        fetchMarketStatus();
+    }, [checkBalance, viewPortfolio, fetchMarketStatus]);
 
     const totalAssets = getTotalAssets();
 

@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import { useMarketStore } from '../store/useMarketStore';
 
 const AdminLayout = ({ children, title = "Admin Dashboard" }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { marketOpen } = useMarketStore();
+    const { marketOpen, fetchMarketStatus } = useMarketStore();
+
+    useEffect(() => {
+        fetchMarketStatus();
+    }, [fetchMarketStatus]);
 
     return (
         <div className="flex h-screen text-white pt-10">
