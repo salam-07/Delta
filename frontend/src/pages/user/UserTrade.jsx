@@ -79,6 +79,21 @@ const UserTrade = () => {
         return selectedStock.price * tradeAmount;
     };
 
+    // Get user's purchase price for P&L calculation
+    const getUserPurchasePrice = () => {
+        if (!selectedStock) return 0;
+        const holding = portfolio.find(p => p.ticker === selectedStock.ticker);
+        return holding ? parseFloat(holding.tradePrice) : 0;
+    };
+
+    // Calculate P&L for sell orders
+    const getSellPnL = () => {
+        if (tradeType !== 'sell' || !selectedStock || !tradeAmount) return 0;
+        const purchasePrice = getUserPurchasePrice();
+        const currentPrice = parseFloat(selectedStock.price);
+        return (currentPrice - purchasePrice) * tradeAmount;
+    };
+
     // Simplified price change calculation
     const calculatePriceChange = () => {
         if (!selectedStock) return { change: 0, percentage: 0 };
@@ -95,6 +110,8 @@ const UserTrade = () => {
     const openingPrice = selectedStock?.openingPrice || selectedStock?.price || 0;
     const stockHoldings = getStockHoldings();
     const tradeValue = getTradeValue();
+    const sellPnL = getSellPnL();
+    const purchasePrice = getUserPurchasePrice();
 
     return (
         <UserLayout title="Trade Stocks">
@@ -227,6 +244,14 @@ const UserTrade = () => {
                                     <span className="text-gray-400">Trade Value:</span>
                                     <span className="text-white font-semibold">${tradeValue.toFixed(2)}</span>
                                 </div>
+                                {tradeType === 'sell' && tradeAmount > 0 && purchasePrice > 0 && (
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-gray-400">P&L:</span>
+                                        <span className={`font-semibold ${sellPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {sellPnL >= 0 ? '+' : ''}${sellPnL.toFixed(2)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-400">
                                         Balance After Trade:
