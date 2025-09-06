@@ -348,6 +348,7 @@ export const getAnalytics = async (req, res) => {
                 totalUsers,
                 usersWithPortfolio,
                 totalInvestedUsers,
+                tradingActivityRate: parseFloat(tradingActivityRate.toFixed(2)),
             },
             tradingMetrics: {
                 totalTrades,
