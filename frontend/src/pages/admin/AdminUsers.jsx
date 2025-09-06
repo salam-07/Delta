@@ -102,7 +102,7 @@ const AdminUsers = () => {
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <Users className="text-blue-400" size={24} />
+                        <Users className="text-green-400" size={24} />
                         <div>
                             <h1 className="text-2xl font-bold text-white">Users Management</h1>
                             <p className="text-xs text-gray-400">
@@ -119,7 +119,7 @@ const AdminUsers = () => {
                             fetchAllStocks();
                         }}
                         disabled={isUsersLoading}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs transition-colors"
+                        className="flex items-center gap-2  text-white px-3 py-2 rounded-lg text-xs transition-colors"
                     >
                         <RefreshCw size={14} className={isUsersLoading ? "animate-spin" : ""} />
                         Refresh
@@ -135,14 +135,14 @@ const AdminUsers = () => {
                             placeholder="Search users by name or email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs focus:border-blue-500 focus:outline-none"
+                            className="w-full pl-9 pr-3 py-2 bg-transparent border border-gray-700 rounded-lg text-white text-xs focus:border-green-500 focus:outline-none"
                         />
                     </div>
 
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:border-blue-500 focus:outline-none"
+                        className="bg-black/90 rounded-lg px-3 py-2 text-white text-xs focus:border-green-500 focus:outline-none"
                     >
                         <option value="totalAssets">Sort by Total Assets</option>
                         <option value="balance">Sort by Balance</option>
@@ -153,7 +153,7 @@ const AdminUsers = () => {
                 </div>
 
                 {/* Users Table */}
-                <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+                <div className="bg-transparent overflow-hidden">
                     {isUsersLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -162,103 +162,117 @@ const AdminUsers = () => {
                     ) : (
                         <>
                             {/* Table Header */}
-                            <div className="bg-gray-800 border-b border-gray-700">
-                                <div className="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                                    <div
-                                        className="col-span-3 cursor-pointer hover:text-white flex items-center gap-1"
-                                        onClick={() => handleSort('name')}
-                                    >
-                                        User Info {getSortIcon('name')}
-                                    </div>
-                                    <div
-                                        className="col-span-2 cursor-pointer hover:text-white flex items-center gap-1"
-                                        onClick={() => handleSort('email')}
-                                    >
-                                        Email {getSortIcon('email')}
-                                    </div>
-                                    <div
-                                        className="col-span-2 cursor-pointer hover:text-white flex items-center gap-1 text-right"
-                                        onClick={() => handleSort('balance')}
-                                    >
-                                        Balance {getSortIcon('balance')}
-                                    </div>
-                                    <div
-                                        className="col-span-2 cursor-pointer hover:text-white flex items-center gap-1 text-right"
-                                        onClick={() => handleSort('portfolioValue')}
-                                    >
-                                        Portfolio {getSortIcon('portfolioValue')}
-                                    </div>
-                                    <div
-                                        className="col-span-2 cursor-pointer hover:text-white flex items-center gap-1 text-right"
-                                        onClick={() => handleSort('totalAssets')}
-                                    >
-                                        Total Assets {getSortIcon('totalAssets')}
-                                    </div>
-                                    <div className="col-span-1 text-center">Holdings</div>
+                            {filteredAndSortedUsers.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                                    <h3 className="text-sm font-medium text-gray-300 mb-2">No Users Found</h3>
+                                    <p className="text-xs text-gray-500">
+                                        {searchTerm ? 'Try adjusting your search criteria' : 'No users in the system yet'}
+                                    </p>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[800px] text-xs">
+                                        <thead className="bg-primary/10 border-b border-gray-700">
+                                            <tr>
+                                                <th
+                                                    className="px-4 py-3 text-left font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
+                                                    onClick={() => handleSort('name')}
+                                                >
+                                                    <div className="flex items-center gap-1">
+                                                        User Info {getSortIcon('name')}
+                                                    </div>
+                                                </th>
+                                                <th
+                                                    className="px-4 py-3 text-left font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
+                                                    onClick={() => handleSort('email')}
+                                                >
+                                                    <div className="flex items-center gap-1">
+                                                        Email {getSortIcon('email')}
+                                                    </div>
+                                                </th>
+                                                <th
+                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
+                                                    onClick={() => handleSort('balance')}
+                                                >
+                                                    <div className="flex items-center gap-1 justify-end">
+                                                        Balance {getSortIcon('balance')}
+                                                    </div>
+                                                </th>
+                                                <th
+                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
+                                                    onClick={() => handleSort('portfolioValue')}
+                                                >
+                                                    <div className="flex items-center gap-1 justify-end">
+                                                        Portfolio {getSortIcon('portfolioValue')}
+                                                    </div>
+                                                </th>
+                                                <th
+                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
+                                                    onClick={() => handleSort('totalAssets')}
+                                                >
+                                                    <div className="flex items-center gap-1 justify-end">
+                                                        Total Assets {getSortIcon('totalAssets')}
+                                                    </div>
+                                                </th>
+                                                <th className="px-4 py-3 text-center font-semibold text-gray-300 uppercase tracking-wider">
+                                                    Holdings
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-800">
+                                            {filteredAndSortedUsers.slice(0, visibleUsers).map((user) => (
+                                                <tr key={user._id} className="hover:bg-primary/5 transition-colors">
+                                                    {/* User Info */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-xs font-medium text-white">
+                                                            {user.fullName || 'N/A'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">
+                                                            ID: {user._id.slice(-8)}
+                                                        </div>
+                                                    </td>
 
-                            {/* Table Body */}
-                            <div className="divide-y divide-gray-800">
-                                {filteredAndSortedUsers.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                                        <h3 className="text-sm font-medium text-gray-300 mb-2">No Users Found</h3>
-                                        <p className="text-xs text-gray-500">
-                                            {searchTerm ? 'Try adjusting your search criteria' : 'No users in the system yet'}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    filteredAndSortedUsers.slice(0, visibleUsers).map((user) => (
-                                        <div key={user._id} className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-gray-800/50 transition-colors">
-                                            {/* User Info */}
-                                            <div className="col-span-3">
-                                                <div className="text-xs font-medium text-white truncate">
-                                                    {user.fullName || 'N/A'}
-                                                </div>
-                                                <div className="text-xs text-gray-400 truncate">
-                                                    ID: {user._id.slice(-8)}
-                                                </div>
-                                            </div>
+                                                    {/* Email */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-xs text-gray-300 max-w-[200px] truncate">
+                                                            {user.email}
+                                                        </div>
+                                                    </td>
 
-                                            {/* Email */}
-                                            <div className="col-span-2">
-                                                <div className="text-xs text-gray-300 truncate">
-                                                    {user.email}
-                                                </div>
-                                            </div>
+                                                    {/* Balance */}
+                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                                                        <div className="text-xs font-medium text-white">
+                                                            {formatCurrency(user.balance)}
+                                                        </div>
+                                                    </td>
 
-                                            {/* Balance */}
-                                            <div className="col-span-2 text-right">
-                                                <div className="text-xs font-medium text-green-400">
-                                                    {formatCurrency(user.balance)}
-                                                </div>
-                                            </div>
+                                                    {/* Portfolio Value */}
+                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                                                        <div className="text-xs font-medium text-white">
+                                                            {formatCurrency(user.portfolioValue)}
+                                                        </div>
+                                                    </td>
 
-                                            {/* Portfolio Value */}
-                                            <div className="col-span-2 text-right">
-                                                <div className="text-xs font-medium text-blue-400">
-                                                    {formatCurrency(user.portfolioValue)}
-                                                </div>
-                                            </div>
+                                                    {/* Total Assets */}
+                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                                                        <div className="text-xs font-bold text-green-400">
+                                                            {formatCurrency(user.totalAssets)}
+                                                        </div>
+                                                    </td>
 
-                                            {/* Total Assets */}
-                                            <div className="col-span-2 text-right">
-                                                <div className="text-xs font-bold text-yellow-400">
-                                                    {formatCurrency(user.totalAssets)}
-                                                </div>
-                                            </div>
-
-                                            {/* Holdings Count */}
-                                            <div className="col-span-1 text-center">
-                                                <div className="text-xs text-gray-400">
-                                                    {user.holdingsCount}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                                                    {/* Holdings Count */}
+                                                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                        <div className="text-xs text-gray-400">
+                                                            {user.holdingsCount}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
 
                             {/* Load More Button */}
                             {visibleUsers < filteredAndSortedUsers.length && (
@@ -276,41 +290,41 @@ const AdminUsers = () => {
                 </div>
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                <div className="px-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-gray-700">
+                    <div className="rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Users className="text-blue-400" size={16} />
+                            <Users className="text-green-400" size={16} />
                             <span className="text-xs font-medium text-gray-400">Total Users</span>
                         </div>
                         <div className="text-xl font-bold text-white">{enrichedUsers.length}</div>
                     </div>
 
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className=" rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <DollarSign className="text-green-400" size={16} />
                             <span className="text-xs font-medium text-gray-400">Total Balance</span>
                         </div>
-                        <div className="text-lg font-bold text-green-400">
+                        <div className="text-lg font-bold text-white-400">
                             {formatCurrency(enrichedUsers.reduce((sum, user) => sum + (user.balance || 0), 0))}
                         </div>
                     </div>
 
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <TrendingUp className="text-blue-400" size={16} />
+                            <TrendingUp className="text-green-400" size={16} />
                             <span className="text-xs font-medium text-gray-400">Total Portfolio</span>
                         </div>
-                        <div className="text-lg font-bold text-blue-400">
+                        <div className="text-lg font-bold text-white-400">
                             {formatCurrency(enrichedUsers.reduce((sum, user) => sum + user.portfolioValue, 0))}
                         </div>
                     </div>
 
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Eye className="text-yellow-400" size={16} />
+                            <Eye className="text-green-400" size={16} />
                             <span className="text-xs font-medium text-gray-400">Total Assets</span>
                         </div>
-                        <div className="text-lg font-bold text-yellow-400">
+                        <div className="text-lg font-bold text-green-400">
                             {formatCurrency(enrichedUsers.reduce((sum, user) => sum + user.totalAssets, 0))}
                         </div>
                     </div>
