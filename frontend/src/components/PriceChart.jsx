@@ -61,7 +61,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
         return (
             <div className={`flex items-center justify-center ${className}`} style={{ height }}>
                 <div className="text-center text-gray-400">
-                    <p className="text-red-400 mb-2">⚠️ {error}</p>
+                    <p className="text-red-400 mb-2">{error}</p>
                     <button
                         onClick={() => stockId && fetchStockHistory(stockId)}
                         className="text-green-400 hover:text-green-300 underline text-sm"
@@ -106,7 +106,7 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                         dataKey="time"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '', fontSize: 12 }}
+                        tick={{ fill: '', fontSize: 1 }}
                         interval="preserveStartEnd"
                     />
                     <YAxis
@@ -123,15 +123,15 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
                         strokeWidth={3}
                         dot={{
                             fill: getLineColor(),
-                            strokeWidth: 2,
+                            strokeWidth: 1,
                             stroke: '#000000',
-                            r: 4
+                            r: 3
                         }}
                         activeDot={{
-                            r: 6,
+                            r: 3,
                             fill: getLineColor(),
                             stroke: '#000000',
-                            strokeWidth: 2
+                            strokeWidth: 1
                         }}
                         filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
                     />
