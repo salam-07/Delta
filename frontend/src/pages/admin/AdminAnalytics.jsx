@@ -123,7 +123,7 @@ const AdminAnalytics = () => {
                     <StatCard
                         title="Market"
                         value={analytics?.overview?.marketOpen ? "OPEN" : "CLOSED"}
-                        subtitle="Trading status"
+                        subtitle="Trading Status"
                         trend={{
                             positive: analytics?.overview?.marketOpen,
                             value: analytics?.overview?.marketOpen ? "Active trading" : "Market closed"
