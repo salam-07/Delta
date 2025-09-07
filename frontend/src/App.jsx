@@ -18,6 +18,7 @@ import AdminDevelopmentView from "./pages/admin/AdminDevelopmentView";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminTrades from "./pages/admin/AdminTrades";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDisplay from "./pages/admin/AdminDisplay";
 
 import UserHome from "./pages/user/UserHome";
 import UserPortfolio from "./pages/user/UserPortfolio";
@@ -78,6 +79,8 @@ const App = () => {
           <Route path="/admin/settings" element={admin ? <AdminSettings /> : <Navigate to="/"> </Navigate>} />
           <Route path="/admin/trades" element={admin ? <AdminTrades /> : <Navigate to="/"> </Navigate>} />
           <Route path="/admin/users" element={admin ? <AdminUsers /> : <Navigate to="/"> </Navigate>} />
+          <Route path="/admin/display" element={admin ? <AdminDisplay /> : <Navigate to="/"> </Navigate>} />
+
 
           <Route path="/user" element={user ? <UserHome /> : <Navigate to="/" />} />
           <Route path="/user/portfolio" element={user ? <UserPortfolio /> : <Navigate to="/" />} />

@@ -8,6 +8,7 @@ import {
     DollarSign,
     X,
     Home,
+    Presentation,
 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -22,7 +23,8 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }) => {
         { id: 'trades', label: 'View Trades', icon: BarChart3, path: '/admin/trades' },
         { id: 'developments', label: 'Developments', icon: FileText, path: '/admin/developments' },
         { id: 'analytics', label: 'Analytics', icon: DollarSign, path: '/admin/analytics' },
-        { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
+        { id: 'display', label: 'Display Screen', icon: Presentation, path: '/admin/display' },
+
     ];
 
     const isActiveRoute = (path) => {
