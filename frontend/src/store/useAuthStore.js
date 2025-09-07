@@ -9,7 +9,6 @@ export const useAuthStore = create((set, get) => ({
     isSigningUp: false,
     isLoggingIn: false,
     isAdmin: false,
-    socket: null,
 
     isCheckingAuth: true,
 
@@ -19,6 +18,10 @@ export const useAuthStore = create((set, get) => ({
             set({ authUser: res.data });
             // Check if user is admin based on role
             set({ isAdmin: res.data?.role === "admin" });
+
+            // Connect to Socket.IO after successful auth
+            const { useSocketStore } = await import("./useSocketStore.js");
+            useSocketStore.getState().connectSocket(res.data._id);
         } catch (error) {
             console.log("Error in checkAuth", error);
             set({ authUser: null, isAdmin: false });
@@ -62,6 +65,11 @@ export const useAuthStore = create((set, get) => ({
             set({ authUser: res.data });
             // Set admin status based on role
             set({ isAdmin: res.data?.role === "admin" });
+
+            // Connect to Socket.IO after successful login
+            const { useSocketStore } = await import("./useSocketStore.js");
+            useSocketStore.getState().connectSocket(res.data._id);
+
             toast.success("Logged in successfully");
         } catch (error) {
             toast.error(error.response.data.message);
@@ -74,6 +82,11 @@ export const useAuthStore = create((set, get) => ({
         try {
             await axiosInstance.post("/auth/logout");
             set({ authUser: null, isAdmin: false });
+
+            // Disconnect Socket.IO on logout
+            const { useSocketStore } = await import("./useSocketStore.js");
+            useSocketStore.getState().disconnectSocket();
+
             toast.success("Logged out succesfully");
         } catch (error) {
             toast.error(error.response.data.message);

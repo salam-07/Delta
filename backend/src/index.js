@@ -7,6 +7,7 @@ import path from "path";
 
 // local imports
 import { connectDB } from "./lib/db.js";
+import { app, server } from "./lib/socket.js";
 import authRoutes from "./routes/auth.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import tradeRoutes from "./routes/trade.route.js";
@@ -16,8 +17,7 @@ import marketRoutes from "./routes/market.route.js";
 dotenv.config();
 const PORT = process.env.PORT;
 
-// express app instance
-const app = express();
+// Note: app is now imported from socket.js instead of created here
 
 // middleware
 app.use(express.json());
@@ -62,7 +62,7 @@ app.use("/api/admin", adminRoutes); // admin only routes. Update, add stocks and
 app.use("/api/trade", tradeRoutes); // endpoints for buying and selling stocks, viewnng balance, portfolio and history
 app.use("/api/market", marketRoutes); //market related routes. View devs, stocks and prices.
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log("Server running on port", PORT);
     connectDB();
 });
