@@ -10,17 +10,17 @@ const AdminDisplay = () => {
     const { onlineUsers } = useSocketStore();
 
     useEffect(() => {
-        const fetchData = () => {
-            fetchAllStocks();
-            getAnalytics();
-            getAllUsers();
-        };
-
-        fetchData();
-        const interval = setInterval(fetchData, 3000); // Refresh every 3 seconds
-
-        return () => clearInterval(interval);
+        fetchAllStocks();
+        getAnalytics();
+        getAllUsers();
     }, [fetchAllStocks, getAnalytics, getAllUsers]);
+
+    // Refresh users when stocks change for real-time net worth updates
+    useEffect(() => {
+        if (stocks && stocks.length > 0) {
+            getAllUsers();
+        }
+    }, [stocks, getAllUsers]);
 
     // Memoized calculations for performance
     const { topStocks, leaderboard, onlineUsersCount } = useMemo(() => ({
