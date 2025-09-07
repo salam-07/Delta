@@ -62,6 +62,13 @@ app.use("/api/admin", adminRoutes); // admin only routes. Update, add stocks and
 app.use("/api/trade", tradeRoutes); // endpoints for buying and selling stocks, viewnng balance, portfolio and history
 app.use("/api/market", marketRoutes); //market related routes. View devs, stocks and prices.
 
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "../frontend/dist")));
+    app.get("/{*any}", (req, res) => {
+        res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    });
+}
+
 server.listen(PORT, () => {
     console.log("Server running on port", PORT);
     connectDB();
