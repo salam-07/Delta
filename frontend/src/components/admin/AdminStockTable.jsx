@@ -66,26 +66,26 @@ const StockTable = ({
         }
     };
 
+    const getPriceAdjustmentValue = (stockId) => {
+        return priceAdjustments[stockId] !== undefined ? priceAdjustments[stockId] : 10;
+    };
+
     const handlePriceAdjustmentChange = (stockId, value) => {
         setPriceAdjustments(prev => ({
             ...prev,
-            [stockId]: value
+            [stockId]: value // Keep the actual value, even if empty
         }));
     };
 
-    const getPriceAdjustmentValue = (stockId) => {
-        return priceAdjustments[stockId] || 10; // Default to 10 if no custom value
-    };
-
     const handlePriceIncrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId);
+        const adjustmentValue = getPriceAdjustmentValue(stockId) || 10; // Use default here
         const newPrice = currentPrice + parseFloat(adjustmentValue);
         await updateStock(stockId, { newPrice });
     };
 
     const handlePriceDecrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId);
-        const newPrice = Math.max(0.01, currentPrice - parseFloat(adjustmentValue)); // Ensure price doesn't go below 0.01
+        const adjustmentValue = getPriceAdjustmentValue(stockId) || 10; // Use default here
+        const newPrice = Math.max(0.01, currentPrice - parseFloat(adjustmentValue));
         await updateStock(stockId, { newPrice });
     };
 
@@ -171,8 +171,8 @@ const StockTable = ({
                                                     onChange={(e) => handlePriceAdjustmentChange(stock._id, e.target.value)}
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="bg-transparent w-16 rounded px-1 py-1 text-white text-xs text-center focus:border-green-500 focus:outline-none"
-                                                    min="0.1"
-                                                    step="0.1"
+                                                    min="1"
+                                                    step="1"
                                                     placeholder="10"
                                                 />
                                                 <button
