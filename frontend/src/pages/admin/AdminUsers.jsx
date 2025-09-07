@@ -13,6 +13,7 @@ const AdminUsers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('totalAssets'); // email, name, balance, totalAssets
     const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
+    const [onlineFilter, setOnlineFilter] = useState('all'); // all, online, offline
     const [visibleUsers, setVisibleUsers] = useState(20); // For lazy loading
 
     useEffect(() => {
@@ -52,6 +53,13 @@ const AdminUsers = () => {
             user.email?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+        // Apply online status filter
+        if (onlineFilter === 'online') {
+            filtered = filtered.filter(user => user.isOnline);
+        } else if (onlineFilter === 'offline') {
+            filtered = filtered.filter(user => !user.isOnline);
+        }
+
         // Sort users
         filtered.sort((a, b) => {
             let aValue = a[sortBy];
@@ -70,7 +78,7 @@ const AdminUsers = () => {
         });
 
         return filtered;
-    }, [enrichedUsers, searchTerm, sortBy, sortOrder]);
+    }, [enrichedUsers, searchTerm, sortBy, sortOrder, onlineFilter]);
 
     const handleSort = (column) => {
         if (sortBy === column) {
@@ -109,7 +117,11 @@ const AdminUsers = () => {
                         <div>
                             <h1 className="text-2xl font-bold text-white">Users Management</h1>
                             <p className="text-xs text-gray-400">
-                                {filteredAndSortedUsers.length} users • Total Assets: {formatCurrency(
+                                {filteredAndSortedUsers.length} users •
+                                {onlineFilter === 'all' && (
+                                    <> {filteredAndSortedUsers.filter(u => u.isOnline).length} online, {filteredAndSortedUsers.filter(u => !u.isOnline).length} offline • </>
+                                )}
+                                Total Assets: {formatCurrency(
                                     filteredAndSortedUsers.reduce((sum, user) => sum + user.totalAssets, 0)
                                 )}
                             </p>
@@ -152,6 +164,16 @@ const AdminUsers = () => {
                         <option value="portfolioValue">Sort by Portfolio Value</option>
                         <option value="name">Sort by Name</option>
                         <option value="email">Sort by Email</option>
+                    </select>
+
+                    <select
+                        value={onlineFilter}
+                        onChange={(e) => setOnlineFilter(e.target.value)}
+                        className="bg-black/90 rounded-lg px-3 py-2 text-white text-xs focus:border-green-500 focus:outline-none"
+                    >
+                        <option value="all">All Users</option>
+                        <option value="online">Online Only</option>
+                        <option value="offline">Offline Only</option>
                     </select>
                 </div>
 
