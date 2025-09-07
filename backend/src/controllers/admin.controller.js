@@ -4,6 +4,7 @@ import Development from "../models/development.model.js";
 import History from "../models/history.model.js";
 import Trade from "../models/trade.model.js";
 import Market from "../models/market.model.js";
+import { emitToAll } from "../lib/socket.js";
 
 export const createStock = async (req, res) => {
 
@@ -75,6 +76,16 @@ export const updatePrice = async (req, res) => {
             }
         );
         await newHistory.save();
+
+        // Emit real-time stock price update to all connected clients
+        emitToAll("stockPriceUpdated", {
+            stockId: updatedStock._id,
+            ticker: updatedStock.ticker,
+            name: updatedStock.name,
+            price: updatedStock.price,
+            openingPrice: updatedStock.openingPrice
+        });
+
         res.status(200).json(updatedStock);
 
     } catch (error) {
@@ -222,6 +233,12 @@ export const setMarketStatus = async (req, res) => {
             market = new Market({ isOpen });
             await market.save();
         }
+
+        // Emit real-time market status update to all connected clients
+        emitToAll("marketStatusChanged", {
+            isOpen: market.isOpen,
+            message: `Market ${isOpen ? 'opened' : 'closed'}`
+        });
 
         res.status(200).json({
             message: `Market ${isOpen ? 'opened' : 'closed'} successfully`,

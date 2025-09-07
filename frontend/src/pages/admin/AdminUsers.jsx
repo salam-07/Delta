@@ -3,10 +3,12 @@ import { Users, DollarSign, TrendingUp, Eye, Search, RefreshCw } from 'lucide-re
 import AdminLayout from '../../layouts/AdminLayout';
 import { useAdminStore } from '../../store/useAdminStore';
 import { useMarketStore } from '../../store/useMarketStore';
+import { useSocketStore } from '../../store/useSocketStore';
 
 const AdminUsers = () => {
     const { users, isUsersLoading, getAllUsers } = useAdminStore();
     const { stocks, fetchAllStocks } = useMarketStore();
+    const { onlineUsers } = useSocketStore();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('totalAssets'); // email, name, balance, totalAssets
@@ -37,7 +39,8 @@ const AdminUsers = () => {
                 ...user,
                 portfolioValue,
                 totalAssets,
-                holdingsCount: user.portfolio?.length || 0
+                holdingsCount: user.portfolio?.length || 0,
+                isOnline: onlineUsers.includes(user._id)
             };
         });
     }, [users, stocks]);
@@ -225,11 +228,15 @@ const AdminUsers = () => {
                                                 <tr key={user._id} className="hover:bg-primary/5 transition-colors">
                                                     {/* User Info */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs font-medium text-white">
-                                                            {user.fullName || 'N/A'}
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="text-xs font-medium text-white">
+                                                                {user.fullName || 'N/A'}
+                                                            </div>
+                                                            <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-400' : 'bg-gray-500'}`} title={user.isOnline ? 'Online' : 'Offline'}>
+                                                            </div>
                                                         </div>
                                                         <div className="text-xs text-gray-400">
-                                                            ID: {user._id.slice(-8)}
+                                                            ID: {user._id.slice(-8)} • {user.isOnline ? 'Online' : 'Offline'}
                                                         </div>
                                                     </td>
 

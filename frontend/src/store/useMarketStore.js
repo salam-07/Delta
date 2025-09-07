@@ -19,6 +19,15 @@ export const useMarketStore = create((set, get) => ({
     history: [],
     isHistoryLoading: false,
 
+    // Helper methods for Socket.IO updates
+    updateStocks: (updatedStocks) => {
+        set({ stocks: updatedStocks });
+    },
+
+    updateMarketStatus: (isOpen) => {
+        set({ marketOpen: isOpen });
+    },
+
     // Fetch market status from backend
     fetchMarketStatus: async () => {
         set({ isMarketStatusLoading: true });

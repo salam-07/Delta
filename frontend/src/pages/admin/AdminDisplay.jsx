@@ -2,10 +2,12 @@
 import React, { useEffect, useMemo } from 'react';
 import { useMarketStore } from '../../store/useMarketStore';
 import { useAdminStore } from '../../store/useAdminStore';
+import { useSocketStore } from '../../store/useSocketStore';
 
 const AdminDisplay = () => {
     const { stocks, fetchAllStocks, marketOpen } = useMarketStore();
     const { analytics, users, getAnalytics, getAllUsers } = useAdminStore();
+    const { onlineUsers } = useSocketStore();
 
     useEffect(() => {
         const fetchData = () => {
@@ -21,7 +23,7 @@ const AdminDisplay = () => {
     }, [fetchAllStocks, getAnalytics, getAllUsers]);
 
     // Memoized calculations for performance
-    const { topStocks, leaderboard, onlineUsers } = useMemo(() => ({
+    const { topStocks, leaderboard, onlineUsersCount } = useMemo(() => ({
         topStocks: stocks
             ?.sort((a, b) => b.price - a.price)
             .slice(0, 8) || [],
@@ -38,8 +40,8 @@ const AdminDisplay = () => {
             .sort((a, b) => b.assets - a.assets)
             .slice(0, 6) || [],
 
-        onlineUsers: analytics?.overview?.totalUsers || 0
-    }), [stocks, users, analytics]);
+        onlineUsersCount: onlineUsers.length
+    }), [stocks, users, onlineUsers]);
 
     const formatCurrency = (amount) => `$${amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}`;
     const formatChange = (stock) => {
@@ -61,7 +63,7 @@ const AdminDisplay = () => {
                 </div>
                 <div className="text-right">
                     <div className="text-green-400 text-xl">USERS ONLINE</div>
-                    <div className="text-4xl font-bold">{onlineUsers}</div>
+                    <div className="text-4xl font-bold">{onlineUsersCount}</div>
                 </div>
             </div>
 

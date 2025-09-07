@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { useAdminStore } from '../../store/useAdminStore';
+import { useSocketStore } from '../../store/useSocketStore';
 
 const StatCard = ({ title, value, subtitle, trend, size = 'large' }) => (
     <div className="bg-black/20 backdrop-blur-sm border border-green-500/20 p-6 rounded-lg hover:border-green-400/40 transition-all duration-300">
@@ -44,6 +45,7 @@ const MetricRow = ({ label, value, accent = false }) => (
 
 const AdminAnalytics = () => {
     const { analytics, isAnalyticsLoading, getAnalytics } = useAdminStore();
+    const { onlineUsers } = useSocketStore();
 
     useEffect(() => {
         getAnalytics();
@@ -264,6 +266,12 @@ const AdminAnalytics = () => {
                                         {analytics?.systemHealth?.marketOpen ? 'OPERATIONAL' : 'CLOSED'}
                                     </span>
                                 </div>
+                            </div>
+                            <div className="bg-black/20 p-4 rounded-lg">
+                                <p className="text-6xl font-bold text-green-400 mb-2">
+                                    {onlineUsers.length}
+                                </p>
+                                <p className="text-white/70 text-sm">Users Online Now</p>
                             </div>
                             <div className="bg-black/20 p-4 rounded-lg">
                                 <p className="text-6xl font-bold text-green-400 mb-2">
