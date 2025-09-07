@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { useAdminStore } from '../../store/useAdminStore';
 
@@ -67,6 +67,81 @@ const AdminAnalytics = () => {
         }).format(num);
     };
 
+    // Memoized hero stats
+    const formattedStats = useMemo(() => ([
+        {
+            title: 'Total System Value',
+            value: formatCompact(analytics?.overview?.totalAssets || 0),
+            subtitle: 'Combined portfolio and cash holdings',
+            size: 'xl',
+        },
+        {
+            title: 'Trading Volume',
+            value: formatCompact(analytics?.overview?.totalTradeVolume || 0),
+            subtitle: 'All-time cumulative volume',
+            size: 'xl',
+        },
+    ]), [analytics]);
+
+    // Memoized overview grid
+    const overviewStats = useMemo(() => ([
+        {
+            title: 'Active Users',
+            value: formatNumber(analytics?.overview?.totalUsers || 0),
+            subtitle: 'Total registered users',
+            trend: {
+                positive: (analytics?.userMetrics?.userGrowthRate || 0) > 0,
+                value: `${analytics?.userMetrics?.userGrowthRate || 0}% growth`,
+            },
+        },
+        {
+            title: 'Total Trades',
+            value: formatNumber(analytics?.overview?.totalTrades || 0),
+            subtitle: 'All trades executed',
+        },
+        {
+            title: 'Listed Stocks',
+            value: formatNumber(analytics?.overview?.totalStocks || 0),
+            subtitle: `${analytics?.stockMetrics?.stocksWithPriceIncrease || 0} currently rising`,
+        },
+        {
+            title: 'Market',
+            value: analytics?.overview?.marketOpen ? 'OPEN' : 'CLOSED',
+            subtitle: 'Trading Status',
+            trend: {
+                positive: analytics?.overview?.marketOpen,
+                value: analytics?.overview?.marketOpen ? 'Active trading' : 'Market closed',
+            },
+        },
+    ]), [analytics]);
+
+    // Memoized metric card data
+    const userMetrics = useMemo(() => ([
+        { label: 'Total Registered', value: formatNumber(analytics?.userMetrics?.totalUsers || 0), accent: true },
+        { label: 'Active Investors', value: formatNumber(analytics?.userMetrics?.totalInvestedUsers || 0) },
+        { label: 'Investment Rate', value: `${analytics?.userMetrics?.tradingActivityRate || 0}%` },
+        { label: 'With Portfolios', value: formatNumber(analytics?.userMetrics?.usersWithPortfolio || 0) },
+    ]), [analytics]);
+
+    const tradingMetrics = useMemo(() => ([
+        { label: 'Total Volume', value: formatCurrency(analytics?.overview?.totalTradeVolume || 0), accent: true },
+        { label: 'Total Trades', value: formatNumber(analytics?.overview?.totalTrades || 0) },
+        { label: 'Buy Orders', value: formatNumber(analytics?.tradingMetrics?.buyTrades || 0) },
+        { label: 'Sell Orders', value: formatNumber(analytics?.tradingMetrics?.sellTrades || 0) },
+        { label: 'Avg Trade Size', value: formatCurrency(analytics?.tradingMetrics?.averageTradeSize || 0) },
+    ]), [analytics]);
+
+    const marketHealth = useMemo(() => ([
+        { label: 'Total Cash', value: formatCurrency(analytics?.overview?.totalCashBalance || 0), accent: true },
+        { label: 'Portfolio Value', value: formatCurrency(analytics?.overview?.totalPortfolioValue || 0) },
+        { label: 'Stocks Rising', value: formatNumber(analytics?.stockMetrics?.stocksWithPriceIncrease || 0) },
+        { label: 'Stocks Falling', value: formatNumber(analytics?.stockMetrics?.stocksWithPriceDecrease || 0) },
+    ]), [analytics]);
+
+    // Memoized top stocks
+    const topStocks = useMemo(() => analytics?.stockMetrics?.topPerformingStocks?.slice(0, 3) || [], [analytics]);
+    const mostHeldStock = useMemo(() => analytics?.stockMetrics?.mostHeldStock, [analytics]);
+
     if (isAnalyticsLoading) {
         return (
             <AdminLayout title="Analytics">
@@ -84,124 +159,43 @@ const AdminAnalytics = () => {
         <AdminLayout title="Analytics">
             <div className="space-y-8">
                 {/* Hero Stats */}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <StatCard
-                        title="Total System Value"
-                        value={formatCompact(analytics?.overview?.totalAssets || 0)}
-                        subtitle="Combined portfolio and cash holdings"
-                        size="xl"
-                    />
-                    <StatCard
-                        title="Trading Volume"
-                        value={formatCompact(analytics?.overview?.totalTradeVolume || 0)}
-                        subtitle="All-time cumulative volume"
-                        size="xl"
-                    />
+                    {formattedStats.map((stat) => (
+                        <StatCard key={stat.title} {...stat} />
+                    ))}
                 </div>
 
                 {/* Overview Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard
-                        title="Active Users"
-                        value={formatNumber(analytics?.overview?.totalUsers || 0)}
-                        subtitle="Total registered users"
-                        trend={{
-                            positive: (analytics?.userMetrics?.userGrowthRate || 0) > 0,
-                            value: `${analytics?.userMetrics?.userGrowthRate || 0}% growth`
-                        }}
-                    />
-                    <StatCard
-                        title="Total Trades"
-                        value={formatNumber(analytics?.overview?.totalTrades || 0)}
-                        subtitle="All trades executed"
-                    />
-                    <StatCard
-                        title="Listed Stocks"
-                        value={formatNumber(analytics?.overview?.totalStocks || 0)}
-                        subtitle={`${analytics?.stockMetrics?.stocksWithPriceIncrease || 0} currently rising`}
-                    />
-                    <StatCard
-                        title="Market"
-                        value={analytics?.overview?.marketOpen ? "OPEN" : "CLOSED"}
-                        subtitle="Trading Status"
-                        trend={{
-                            positive: analytics?.overview?.marketOpen,
-                            value: analytics?.overview?.marketOpen ? "Active trading" : "Market closed"
-                        }}
-                    />
+                    {overviewStats.map((stat) => (
+                        <StatCard key={stat.title} {...stat} />
+                    ))}
                 </div>
 
                 {/* Detailed Metrics */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <MetricCard title="User Analytics">
-                        <MetricRow
-                            label="Total Registered"
-                            value={formatNumber(analytics?.userMetrics?.totalUsers || 0)}
-                            accent
-                        />
-                        <MetricRow
-                            label="Active Investors"
-                            value={formatNumber(analytics?.userMetrics?.totalInvestedUsers || 0)}
-                        />
-                        <MetricRow
-                            label="Investment Rate"
-                            value={`${analytics?.userMetrics?.tradingActivityRate || 0}%`}
-                        />
-                        <MetricRow
-                            label="With Portfolios"
-                            value={formatNumber(analytics?.userMetrics?.usersWithPortfolio || 0)}
-                        />
+                        {userMetrics.map((row) => (
+                            <MetricRow key={row.label} {...row} />
+                        ))}
                     </MetricCard>
-
                     <MetricCard title="Trading Activity">
-                        <MetricRow
-                            label="Total Volume"
-                            value={formatCurrency(analytics?.overview?.totalTradeVolume || 0)}
-                            accent
-                        />
-                        <MetricRow
-                            label="Total Trades"
-                            value={formatNumber(analytics?.overview?.totalTrades || 0)}
-                        />
-                        <MetricRow
-                            label="Buy Orders"
-                            value={formatNumber(analytics?.tradingMetrics?.buyTrades || 0)}
-                        />
-                        <MetricRow
-                            label="Sell Orders"
-                            value={formatNumber(analytics?.tradingMetrics?.sellTrades || 0)}
-                        />
-                        <MetricRow
-                            label="Avg Trade Size"
-                            value={formatCurrency(analytics?.tradingMetrics?.averageTradeSize || 0)}
-                        />
+                        {tradingMetrics.map((row) => (
+                            <MetricRow key={row.label} {...row} />
+                        ))}
                     </MetricCard>
-
                     <MetricCard title="Market Health">
-                        <MetricRow
-                            label="Total Cash"
-                            value={formatCurrency(analytics?.overview?.totalCashBalance || 0)}
-                            accent
-                        />
-                        <MetricRow
-                            label="Portfolio Value"
-                            value={formatCurrency(analytics?.overview?.totalPortfolioValue || 0)}
-                        />
-                        <MetricRow
-                            label="Stocks Rising"
-                            value={formatNumber(analytics?.stockMetrics?.stocksWithPriceIncrease || 0)}
-                        />
-                        <MetricRow
-                            label="Stocks Falling"
-                            value={formatNumber(analytics?.stockMetrics?.stocksWithPriceDecrease || 0)}
-                        />
+                        {marketHealth.map((row) => (
+                            <MetricRow key={row.label} {...row} />
+                        ))}
                     </MetricCard>
                 </div>
 
                 {/* Top Performing Stocks */}
                 <MetricCard title="Top Performing Stocks">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {analytics?.stockMetrics?.topPerformingStocks?.slice(0, 3).map((stock, index) => (
+                        {topStocks.map((stock) => (
                             <div key={stock.ticker} className="bg-black/10 p-4 rounded-lg border border-green-500/10">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
@@ -224,11 +218,11 @@ const AdminAnalytics = () => {
                             </div>
                         ))}
                     </div>
-                    {analytics?.stockMetrics?.mostHeldStock?.ticker && (
+                    {mostHeldStock?.ticker && (
                         <div className="mt-4 pt-4 border-t border-white/10">
                             <MetricRow
                                 label="Most Held Stock"
-                                value={`${analytics.stockMetrics.mostHeldStock.ticker} (${analytics.stockMetrics.mostHeldStock.count} holders)`}
+                                value={`${mostHeldStock.ticker} (${mostHeldStock.count} holders)`}
                                 accent
                             />
                         </div>
