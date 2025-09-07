@@ -186,25 +186,19 @@ export const useTradeStore = create((set, get) => ({
     },
 
     getProfitLoss: () => {
-        const { portfolio } = get();
-        const { stocks } = useMarketStore.getState();
+        const INITIAL_CASH = 1000; // Hardcoded initial cash amount
+        const currentTotalAssets = get().getTotalAssets();
 
-        // Calculate total invested amount using original trade prices
-        const totalInvested = portfolio.reduce((total, stock) => {
-            const investedValue = (stock.amount || 0) * (stock.tradePrice || 0);
-            return total + investedValue;
-        }, 0);
+        // Simple P&L: current total assets minus initial cash
+        return currentTotalAssets - INITIAL_CASH;
+    },
 
-        // Calculate current portfolio value using market prices
-        const currentPortfolioValue = portfolio.reduce((total, stock) => {
-            const currentStock = stocks.find(s => s.ticker === stock.ticker);
-            const currentPrice = currentStock ? parseFloat(currentStock.price) : 0;
-            const currentValue = (stock.amount || 0) * currentPrice;
-            return total + currentValue;
-        }, 0);
+    getProfitLossPercentage: () => {
+        const INITIAL_CASH = 1000; // Hardcoded initial cash amount
+        const profitLoss = get().getProfitLoss();
 
-        // P&L is the difference between current value and invested amount
-        return currentPortfolioValue - totalInvested;
+        // Percentage change from initial cash
+        return (profitLoss / INITIAL_CASH) * 100;
     },
 
     // Reset Methods
