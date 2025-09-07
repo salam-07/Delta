@@ -15,6 +15,7 @@ import marketRoutes from "./routes/market.route.js";
 
 // .env 
 dotenv.config();
+const __dirname = path.resolve();
 const PORT = process.env.PORT;
 
 // Note: app is now imported from socket.js instead of created here
