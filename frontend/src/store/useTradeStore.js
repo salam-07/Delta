@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
 import { useMarketStore } from "./useMarketStore.js";
+import { playTradeSuccessSound } from "../lib/audio.js";
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
@@ -30,6 +31,9 @@ export const useTradeStore = create((set, get) => ({
 
             toast.success(`Successfully bought ${amount} shares of ${ticker}`);
 
+            // Play success sound effect
+            playTradeSuccessSound();
+
             // Refresh balance and portfolio after successful trade
             get().checkBalance();
             get().viewPortfolio();
@@ -54,6 +58,9 @@ export const useTradeStore = create((set, get) => ({
             });
 
             toast.success(`Successfully sold ${amount} shares of ${ticker}`);
+
+            // Play success sound effect
+            playTradeSuccessSound();
 
             // Refresh balance and portfolio after successful trade
             get().checkBalance();
