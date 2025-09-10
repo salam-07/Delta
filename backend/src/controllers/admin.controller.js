@@ -18,7 +18,7 @@ export const createStock = async (req, res) => {
         }
 
         // check if stock ticker already exists
-        const stock = await Stock.findOne({ ticker });
+        const stock = await Stock.findOne({ ticker }).lean();
 
         // if stock already exists, then show message
         if (stock) return res.status(400).json({ message: "Stock already exists" });
@@ -115,7 +115,7 @@ export const newDevelopment = async (req, res) => {
         }
 
         // check if stock ticker already exists
-        const development = await Development.findOne({ title });
+        const development = await Development.findOne({ title }).lean();
 
         // if stock already exists, then show message
         if (development) return res.status(400).json({ message: "Development already exists" });
@@ -192,7 +192,7 @@ export const postDevelopment = async (req, res) => {
 
 export const showUsers = async (req, res) => {
     try {
-        const users = await User.find({ role: { $ne: "admin" } }).select("-password");
+        const users = await User.find({ role: { $ne: "admin" } }).select("-password").lean();
         res.status(200).json(users);
     } catch (error) {
         console.log("Error in showUsers controller", error);
@@ -205,7 +205,8 @@ export const showTradingHistory = async (req, res) => {
         const history = await Trade.find({})
             .populate('traderId', 'fullName name email')
             .populate('stockId', 'ticker name')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json(history);
 
     } catch (error) {
@@ -223,11 +224,10 @@ export const setMarketStatus = async (req, res) => {
         }
 
         // Find existing market status or create new one
-        let market = await Market.findOne({});
+        let market = await Market.findOne({}).lean();
 
         if (market) {
-            market.isOpen = isOpen;
-            await market.save();
+            market = await Market.findOneAndUpdate({}, { isOpen }, { new: true });
         } else {
             // Create new market status if none exists
             market = new Market({ isOpen });
@@ -257,13 +257,13 @@ export const getAnalytics = async (req, res) => {
         const totalUsers = await User.countDocuments({ role: { $ne: "admin" } });
 
         // User balances and portfolio analytics
-        const users = await User.find({ role: { $ne: "admin" } });
+        const users = await User.find({ role: { $ne: "admin" } }).lean();
         const totalCashBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
         const usersWithPortfolio = users.filter(user => user.portfolio && user.portfolio.length > 0).length;
 
         // === STOCK ANALYTICS ===
         const totalStocks = await Stock.countDocuments({});
-        const stocks = await Stock.find({});
+        const stocks = await Stock.find({}).lean();
         const stocksWithPriceIncrease = stocks.filter(stock =>
             stock.price > stock.openingPrice
         ).length;
@@ -275,7 +275,7 @@ export const getAnalytics = async (req, res) => {
         const totalTrades = await Trade.countDocuments({});
 
         // Trade volume analytics
-        const allTrades = await Trade.find({});
+        const allTrades = await Trade.find({}).lean();
         const totalTradeVolume = allTrades.reduce((sum, trade) =>
             sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0
         );
@@ -286,7 +286,7 @@ export const getAnalytics = async (req, res) => {
         const averageTradeSize = totalTrades > 0 ? (totalTradeVolume / totalTrades) : 0;
 
         // === MARKET ANALYTICS ===
-        const marketStatus = await Market.findOne({});
+        const marketStatus = await Market.findOne({}).lean();
         const isMarketOpen = marketStatus ? marketStatus.isOpen : false;
 
         // === DEVELOPMENT ANALYTICS ===
@@ -333,7 +333,8 @@ export const getAnalytics = async (req, res) => {
             .populate('traderId', 'fullName')
             .populate('stockId', 'ticker')
             .sort({ createdAt: -1 })
-            .limit(5);
+            .limit(5)
+            .lean();
 
         // === TOP PERFORMING STOCKS ===
         const topPerformingStocks = stocks

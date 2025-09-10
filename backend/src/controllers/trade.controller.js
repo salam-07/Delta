@@ -6,7 +6,7 @@ import Market from "../models/market.model.js";
 
 // Helper function to check if market is open
 const checkMarketStatus = async () => {
-    const market = await Market.findOne({});
+    const market = await Market.findOne({}).lean();
     return market ? market.isOpen : false; // Default to closed if no market status exists
 };
 
@@ -21,7 +21,7 @@ export const buy = async (req, res) => {
         const { ticker, amount } = req.body;
         const traderId = req.user._id;
         // Get the stock document
-        const stock = await Stock.findOne({ ticker: ticker });
+        const stock = await Stock.findOne({ ticker: ticker }).lean();
 
         if (!stock) {
             return res.status(404).json({ message: "Stock not found" });
@@ -97,7 +97,7 @@ export const sell = async (req, res) => {
         const { ticker, amount } = req.body;
         const traderId = req.user._id;
         // Get the stock document
-        const stock = await Stock.findOne({ ticker: ticker });
+        const stock = await Stock.findOne({ ticker: ticker }).lean();
         if (!stock) {
             return res.status(404).json({ message: "Stock not found" });
         }
@@ -158,7 +158,7 @@ export const sell = async (req, res) => {
 export const checkBalance = async (req, res) => {
     try {
         const traderId = req.user._id;
-        const balance = await User.find(traderId).select("balance");
+        const balance = await User.findById(traderId).select("balance").lean();
 
         res.status(200).json(balance);
     } catch (error) {
@@ -170,7 +170,7 @@ export const checkBalance = async (req, res) => {
 export const viewPortfolio = async (req, res) => {
     try {
         const traderId = req.user._id;
-        const portfolio = await User.find(traderId).select("portfolio");
+        const portfolio = await User.findById(traderId).select("portfolio").lean();
         res.status(200).json(portfolio);
     } catch (error) {
         console.log("Error in viewPortfolio controller", error);
@@ -184,7 +184,7 @@ export const viewPortfolioStock = async (req, res) => {
         const { id } = req.params; // This should be the ticker symbol
 
         // Find the user and get their portfolio
-        const user = await User.findById(traderId).select("portfolio");
+        const user = await User.findById(traderId).select("portfolio").lean();
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -200,7 +200,7 @@ export const viewPortfolioStock = async (req, res) => {
         }
 
         // Get current market data for the stock
-        const currentStock = await Stock.findOne({ ticker: id });
+        const currentStock = await Stock.findOne({ ticker: id }).lean();
 
         if (!currentStock) {
             return res.status(404).json({
@@ -249,7 +249,8 @@ export const viewHistory = async (req, res) => {
         const traderId = req.user._id;
         const history = await Trade.find({ traderId: traderId })
             .populate('stockId', 'ticker name price')
-            .sort({ createdAt: -1 }); // Sort by most recent first
+            .sort({ createdAt: -1 })
+            .lean(); // Sort by most recent first
 
         res.status(200).json(history);
     } catch (error) {

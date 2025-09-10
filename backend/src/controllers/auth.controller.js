@@ -21,7 +21,7 @@ export const signup = async (req, res) => {
         }
 
         // check if user already exists
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).lean();
 
         // if user already exists, then show message
         if (user) return res.status(400).json({ message: "You have already registered!" });
@@ -68,7 +68,7 @@ export const login = async (req, res) => {
 
     try {
         // see if user exists
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).lean();
 
         // error is no user exists
         if (!user) {
