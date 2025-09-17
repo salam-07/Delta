@@ -1,6 +1,30 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axios.js";
+import { axiosInstance } from "../lib/axios";
+
+
+fetchStockHistory: async (stockId) => {
+    set({ isHistoryLoading: true });
+    try {
+        const res = await axiosInstance.get(`/market/history/${stockId}`);
+        set({ history: res.data });
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to fetch stock history");
+        console.error("Error fetching stock history:", error);
+    } finally {
+        set({ isHistoryLoading: false });
+    }
+};
+
+fetchStockCompanyInfo: async (stockId) => {
+    try {
+        const res = await axiosInstance.get(`/market/company-info/${stockId}`);
+        return res.data;
+    } catch (error) {
+        console.error("Error fetching company info:", error);
+        return { companyInfo: "" };
+    }
+};
 
 export const useMarketStore = create((set, get) => ({
     marketOpen: false,
@@ -101,6 +125,16 @@ export const useMarketStore = create((set, get) => ({
             console.error("Error fetching history:", error);
         } finally {
             set({ isHistoryLoading: false });
+        }
+    },
+
+    fetchStockCompanyInfo: async (stockId) => {
+        try {
+            const res = await axiosInstance.get(`/market/company-info/${stockId}`);
+            return res.data;
+        } catch (error) {
+            console.error("Error fetching company info:", error);
+            return { companyInfo: "" };
         }
     },
 

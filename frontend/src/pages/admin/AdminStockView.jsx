@@ -10,6 +10,7 @@ const AdminStockView = () => {
     const { stockId } = useParams();
     const navigate = useNavigate();
     const [priceAdjustment, setPriceAdjustment] = useState(10);
+    const [companyInfo, setCompanyInfo] = useState('');
 
     const {
         stock,
@@ -18,6 +19,7 @@ const AdminStockView = () => {
         fetchStock,
         fetchStockHistory,
         fetchAllStocks,
+        fetchStockCompanyInfo,
         isStockLoading,
         isHistoryLoading,
         isStocksLoading
@@ -29,8 +31,13 @@ const AdminStockView = () => {
         if (stockId) {
             fetchStock(stockId);
             fetchStockHistory(stockId);
+
+            // Fetch company info
+            fetchStockCompanyInfo(stockId).then((data) => {
+                setCompanyInfo(data.companyInfo || '');
+            });
         }
-    }, [stockId, fetchStock, fetchStockHistory]);
+    }, [stockId, fetchStock, fetchStockHistory, fetchStockCompanyInfo]);
 
     // Fetch all stocks for dropdown
     useEffect(() => {
@@ -211,6 +218,18 @@ const AdminStockView = () => {
                 <div className="p-6">
                     <PriceChart stockId={stockId} height={300} />
                 </div>
+
+                {/* Company Info Section */}
+                {companyInfo && (
+                    <div className="p-6">
+                        <h3 className="text-xl font-semibold text-white mb-4">Company Information</h3>
+                        <div className=" p-4">
+                            <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                {companyInfo}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Price Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -10,12 +10,14 @@ const UserTrade = () => {
     const [selectedStock, setSelectedStock] = useState(null);
     const [tradeAmount, setTradeAmount] = useState(1);
     const [tradeType, setTradeType] = useState('buy'); // 'buy' or 'sell'
+    const [companyInfo, setCompanyInfo] = useState('');
 
     const {
         stocks,
         history,
         fetchAllStocks,
         fetchStockHistory,
+        fetchStockCompanyInfo,
         isStocksLoading,
         isHistoryLoading
     } = useMarketStore();
@@ -41,8 +43,13 @@ const UserTrade = () => {
             const stock = stocks.find(s => s._id === selectedStockId);
             setSelectedStock(stock);
             fetchStockHistory(selectedStockId);
+
+            // Fetch company info
+            fetchStockCompanyInfo(selectedStockId).then((data) => {
+                setCompanyInfo(data.companyInfo || '');
+            });
         }
-    }, [selectedStockId, stocks, fetchStockHistory]);
+    }, [selectedStockId, stocks, fetchStockHistory, fetchStockCompanyInfo]);
 
     const handleStockSelect = (e) => {
         const stockId = e.target.value;
@@ -307,6 +314,18 @@ const UserTrade = () => {
                             <h3 className="text-xl font-semibold text-white mb-4">Price Chart</h3>
                             <PriceChart stockId={selectedStockId} height={300} />
                         </div>
+
+                        {/* Company Info Section */}
+                        {companyInfo && (
+                            <div className="p-6">
+                                <h3 className="text-xl font-semibold text-white mb-4">Company Information</h3>
+                                <div className=" p-4">
+                                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                        {companyInfo}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Price Data */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

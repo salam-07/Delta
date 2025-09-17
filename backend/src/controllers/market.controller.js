@@ -41,6 +41,26 @@ export const viewStockHistory = async (req, res) => {
     }
 };
 
+export const getStockCompanyInfo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const stock = await Stock.findById(id).select("ticker name companyInfo").lean();
+
+        if (!stock) {
+            return res.status(404).json({ message: "Stock not found" });
+        }
+
+        res.status(200).json({
+            ticker: stock.ticker,
+            name: stock.name,
+            companyInfo: stock.companyInfo || ""
+        });
+    } catch (error) {
+        console.log("Error in getStockCompanyInfo controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 export const viewAllDevelopments = async (req, res) => {
     try {
         const devs = await Development.find({}).sort({ createdAt: -1 }).lean();

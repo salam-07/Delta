@@ -18,6 +18,10 @@ const stockSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        companyInfo: {
+            type: String,
+            default: "",
+        },
     },
     { timestamps: true }
 );
