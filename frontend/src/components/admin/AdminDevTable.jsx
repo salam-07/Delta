@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Edit, Trash2, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const DevTable = ({
@@ -6,6 +6,8 @@ const DevTable = ({
     isLoading = false,
     onRefresh = () => { },
     onToggleStatus = null,
+    onEdit = null,
+    onDelete = null,
     showRefreshButton = true,
     title = "Developments"
 }) => {
@@ -67,14 +69,14 @@ const DevTable = ({
                 /* Responsive Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {devs.map((dev) => (
-                        <Link
+                        <div
                             key={dev._id}
-                            to={`/admin/developments/${dev._id}`}
-                            className=" backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 cursor-pointer group block"
+                            className="backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 group"
                         >
-                            {/* Status Badge */}
-                            {dev.posted !== undefined && (
-                                <div className="flex justify-end mb-3">
+                            {/* Header with Actions */}
+                            <div className="flex justify-between items-start mb-3">
+                                {/* Status Badge */}
+                                {dev.posted !== undefined && (
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${dev.posted
                                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
@@ -89,8 +91,50 @@ const DevTable = ({
                                     >
                                         {dev.posted ? 'Published' : 'Draft'}
                                     </span>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {/* View/Edit Link */}
+                                    <Link
+                                        to={`/admin/developments/${dev._id}`}
+                                        className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                        title="View Details"
+                                    >
+                                        <ExternalLink size={14} />
+                                    </Link>
+
+                                    {/* Edit Button */}
+                                    {onEdit && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onEdit(dev);
+                                            }}
+                                            className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
+                                            title="Edit Development"
+                                        >
+                                            <Edit size={14} />
+                                        </button>
+                                    )}
+
+                                    {/* Delete Button */}
+                                    {onDelete && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onDelete(dev._id);
+                                            }}
+                                            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                                            title="Delete Development"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                 </div>
-                            )}
+                            </div>
 
                             {/* Title */}
                             <h4 className="text-lg font-semibold text-white mb-3 group-hover:text-green-400 transition-colors line-clamp-2">
@@ -101,6 +145,19 @@ const DevTable = ({
                             <p className="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-4">
                                 {truncateContent(dev.content)}
                             </p>
+
+                            {/* Stock Price Changes Indicator */}
+                            {dev.stockPriceChanges && dev.stockPriceChanges.length > 0 && (
+                                <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs">
+                                    <div className="text-yellow-400 font-medium">
+                                        Stock Price Changes ({dev.stockPriceChanges.length})
+                                    </div>
+                                    <div className="text-gray-400 mt-1">
+                                        {dev.stockPriceChanges.slice(0, 3).map(change => change.ticker).join(", ")}
+                                        {dev.stockPriceChanges.length > 3 && "..."}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Footer */}
                             <div className="flex justify-between items-center pt-3 border-t border-gray-700/50">
@@ -114,7 +171,7 @@ const DevTable = ({
                                     {dev.content ? `${dev.content.split(' ').length} words` : "No content"}
                                 </span>
                             </div>
-                        </Link>
+                        </div>
                     ))}
                 </div>
             )}

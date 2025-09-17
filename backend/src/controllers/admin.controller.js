@@ -109,24 +109,42 @@ export const deleteStock = async (req, res) => {
 
 export const newDevelopment = async (req, res) => {
     try {
-        const { title, content } = req.body;
+        const { title, content, stockPriceChanges = [] } = req.body;
         if (!title || !content) {
-            return res.status(400).json({ message: "All fields required" });
+            return res.status(400).json({ message: "Title and content are required" });
         }
 
-        // check if stock ticker already exists
+        // check if development already exists
         const development = await Development.findOne({ title }).lean();
 
-        // if stock already exists, then show message
+        // if development already exists, then show message
         if (development) return res.status(400).json({ message: "Development already exists" });
 
-        // create new stock
-        const newDev = new Development(
-            {
-                title: title,
-                content: content,
+        // Validate stock price changes if provided
+        if (stockPriceChanges.length > 0) {
+            for (const change of stockPriceChanges) {
+                if (!change.stockId || !change.ticker || change.newPrice < 0) {
+                    return res.status(400).json({
+                        message: "Invalid stock price change data. All fields are required and price must be non-negative."
+                    });
+                }
+
+                // Verify stock exists
+                const stock = await Stock.findById(change.stockId).lean();
+                if (!stock) {
+                    return res.status(404).json({
+                        message: `Stock with ID ${change.stockId} not found`
+                    });
+                }
             }
-        );
+        }
+
+        // create new development
+        const newDev = new Development({
+            title: title,
+            content: content,
+            stockPriceChanges: stockPriceChanges
+        });
 
         if (newDev) {
             await newDev.save();
@@ -134,6 +152,8 @@ export const newDevelopment = async (req, res) => {
                 _id: newDev._id,
                 title: newDev.title,
                 content: newDev.content,
+                stockPriceChanges: newDev.stockPriceChanges,
+                posted: newDev.posted
             });
         }
     } catch (error) {
@@ -145,13 +165,52 @@ export const newDevelopment = async (req, res) => {
 export const editDevelopment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { content } = req.body;
+        const { title, content, stockPriceChanges = [] } = req.body;
 
         if (!content) {
             return res.status(400).json({ message: "Content is required" });
         }
 
-        const updatedDev = await Development.findByIdAndUpdate(id, { content: content }, { new: true });
+        // Validate stock price changes if provided
+        if (stockPriceChanges.length > 0) {
+            for (const change of stockPriceChanges) {
+                if (!change.stockId || !change.ticker || change.newPrice < 0) {
+                    return res.status(400).json({
+                        message: "Invalid stock price change data. All fields are required and price must be non-negative."
+                    });
+                }
+
+                // Verify stock exists
+                const stock = await Stock.findById(change.stockId).lean();
+                if (!stock) {
+                    return res.status(404).json({
+                        message: `Stock with ID ${change.stockId} not found`
+                    });
+                }
+            }
+        }
+
+        const updateData = {
+            content: content,
+            stockPriceChanges: stockPriceChanges
+        };
+
+        // Only update title if provided and different
+        if (title) {
+            // Check if title already exists for another development
+            const existingDev = await Development.findOne({
+                title: title,
+                _id: { $ne: id }
+            }).lean();
+
+            if (existingDev) {
+                return res.status(400).json({ message: "Development with this title already exists" });
+            }
+
+            updateData.title = title;
+        }
+
+        const updatedDev = await Development.findByIdAndUpdate(id, updateData, { new: true });
         if (!updatedDev) return res.status(404).json({ message: "Development not found" });
         res.status(200).json(updatedDev);
 
@@ -163,11 +222,11 @@ export const editDevelopment = async (req, res) => {
 
 export const deleteDevelopment = async (req, res) => {
     try {
-        const { title, content } = req.body;
-        const deletedDev = await Development.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        const deletedDev = await Development.findByIdAndDelete(id);
         if (!deletedDev) return res.status(404).json({ message: "Development not found" });
 
-        res.status(200).json({ message: "Development Deleted!" });
+        res.status(200).json({ message: "Development deleted successfully!" });
     } catch (error) {
         console.error("Error in deleteDevelopment controller", error);
         res.status(500).json({ message: "Internal Server Error" });
@@ -179,9 +238,54 @@ export const postDevelopment = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
+        // Get the development first to access stock price changes
+        const development = await Development.findById(id);
+        if (!development) return res.status(404).json({ message: "Development not found" });
+
+        // If posting the development (status = true) and there are stock price changes
+        if (status === true && development.stockPriceChanges && development.stockPriceChanges.length > 0) {
+            // Apply stock price changes
+            for (const change of development.stockPriceChanges) {
+                try {
+                    // Update stock price
+                    const updatedStock = await Stock.findByIdAndUpdate(
+                        change.stockId,
+                        { price: change.newPrice },
+                        { new: true }
+                    );
+
+                    if (updatedStock) {
+                        // Create history entry
+                        const newHistory = new History({
+                            stockId: updatedStock._id,
+                            price: change.newPrice,
+                        });
+                        await newHistory.save();
+
+                        // Emit real-time stock price update to all connected clients
+                        emitToAll("stockPriceUpdated", {
+                            stockId: updatedStock._id,
+                            ticker: updatedStock.ticker,
+                            name: updatedStock.name,
+                            price: updatedStock.price,
+                            openingPrice: updatedStock.openingPrice
+                        });
+                    }
+                } catch (stockUpdateError) {
+                    console.log(`Error updating stock ${change.ticker}:`, stockUpdateError);
+                    // Continue with other stocks even if one fails
+                }
+            }
+        }
+
+        // Update development status
         const updatedDev = await Development.findByIdAndUpdate(id, { posted: status }, { new: true });
         if (!updatedDev) return res.status(404).json({ message: "Development not found" });
-        res.status(200).json(updatedDev);
+
+        res.status(200).json({
+            ...updatedDev.toObject(),
+            message: status ? "Development posted and stock prices updated successfully!" : "Development status updated successfully!"
+        });
 
     } catch (error) {
         console.log("error in postDevelopment", error);

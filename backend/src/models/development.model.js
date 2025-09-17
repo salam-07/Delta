@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// create the database collection (table) for a stock
+// create the database collection (table) for a development
 const developmentSchema = new mongoose.Schema(
     {
         title: {
@@ -14,7 +14,25 @@ const developmentSchema = new mongoose.Schema(
         posted: {
             type: Boolean,
             default: false
-        }
+        },
+        stockPriceChanges: [
+            {
+                stockId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Stock',
+                    required: true
+                },
+                ticker: {
+                    type: String,
+                    required: true
+                },
+                newPrice: {
+                    type: Number,
+                    required: true,
+                    min: 0
+                }
+            }
+        ]
     },
     { timestamps: true }
 );
