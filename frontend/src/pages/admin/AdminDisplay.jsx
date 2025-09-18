@@ -26,7 +26,7 @@ const AdminDisplay = () => {
     const { topStocks, leaderboard, onlineUsersCount } = useMemo(() => ({
         topStocks: stocks
             ?.sort((a, b) => b.price - a.price)
-            .slice(0, 8) || [],
+            .slice(0, 10) || [],
 
         leaderboard: users
             ?.filter(user => user.role !== 'admin')
