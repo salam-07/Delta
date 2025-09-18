@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/salam-07/Delta/issues"
   },
-  "homepage": "https://github.com/salam-07/Delta#readme"
+  "homepage": "https://github.com/salam-07/Delta#readme",
+  "dependencies": {
+    "react-live-clock": "^6.1.25"
+  }
 }
