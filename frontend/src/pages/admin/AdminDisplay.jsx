@@ -80,7 +80,7 @@ const AdminDisplay = () => {
             {/* Header */}
             <div className="bg-green-900/30 border-b-2 border-green-400 px-8 py-1 flex justify-between items-center">
                 <div className="flex items-center gap-8">
-                    <h1 className="text-4xl font-bold text-green-400 tracking-wider">DELTA TRADING FLOOR</h1>
+                    <h1 className="text-4xl font-bold text-green-400 tracking-wider">PSX TRADING FLOOR</h1>
                     <div className={`flex items-center gap-2 text-2xl font-bold ${marketOpen ? 'text-green-400' : 'text-red-400'}`}>
                         <div className={`w-4 h-4 rounded-full ${marketOpen ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
                         {marketOpen ? 'MARKET OPEN' : 'MARKET CLOSED'}
