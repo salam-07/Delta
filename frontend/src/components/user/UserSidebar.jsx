@@ -93,6 +93,10 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             <p className="text-xs text-gray-400">Trader</p>
                         </div>
                     </div>
+                    {/* Footer */}
+                    <footer className="w-full text-left mt-4 bg-transparent text-xs text-gray-400">
+                        <p>© 2025 Delta™ Trading Platform. Developed by Abdus Salam</p>
+                    </footer>
                 </div>
             </div>
         </>
