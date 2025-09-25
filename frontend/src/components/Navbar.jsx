@@ -8,14 +8,14 @@ const Navbar = () => {
     return (
         <header
             className="fixed w-full top-0 z-40 backdrop-blur-sm">
-            <div className="container mx-auto px-4 h-12">
-                <div className="flex items-center justify-between h-full">
+            <div className="container mx-auto px-4 h-8">
+                <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-8">
                         <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-all">
                             <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <ChartNoAxesCombined className="w-5 h-5 text-primary" />
                             </div>
-                            <h1 className="text-lg font-bold text-primary">Delta™ <span className="text-white/50 font-semibold text-lg">For PSX</span></h1>
+                            <h1 className="text-lg font-bold text-primary">Delta™ <span className="text-white/70 font-semibold text-lg ml-2">For PSX</span></h1>
                         </Link>
                     </div>
 
