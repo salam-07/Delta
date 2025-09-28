@@ -31,6 +31,9 @@ import usePageTracking from "./lib/usePageTracking";
 
 
 const App = () => {
+
+  usePageTracking();
+
   const { authUser, checkAuth, isCheckingAuth, isAdmin } = useAuthStore();
 
   useEffect(() => {
@@ -47,8 +50,6 @@ const App = () => {
 
   const admin = authUser && isAdmin;
   const user = authUser && !isAdmin;
-
-  usePageTracking();
 
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
