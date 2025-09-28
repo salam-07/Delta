@@ -27,6 +27,7 @@ import UserDevelopments from "./pages/user/UserDevelopments";
 import UserHistory from "./pages/user/UserHistory";
 import UserDevelopmentView from "./pages/user/UserDevelopmentView";
 import UserHelp from "./pages/user/UserHelp";
+import usePageTracking from "./lib/usePageTracking";
 
 
 const App = () => {
@@ -46,6 +47,8 @@ const App = () => {
 
   const admin = authUser && isAdmin;
   const user = authUser && !isAdmin;
+
+  usePageTracking();
 
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
