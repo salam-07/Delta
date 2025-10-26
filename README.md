@@ -5,10 +5,10 @@ Delta is a full-scale stock market simulation software which can be personalised
 ```
 [ LANGUAGES BREAKDOWN ]
 
-JSX          --> 12,321 lines
-JavaScript   --> 5,681 lines
+JSX          --> 12,487 lines
+JavaScript   --> 5,840 lines
 Others       --> 6,203 lines
 
-[ TOTAL LINES OF CODE: 24,205 ]
+[ TOTAL LINES OF CODE: 24,530 ]
 ```
 <!-- LANGUAGES BREAKDOWN END -->
