@@ -193,7 +193,7 @@ export const useTradeStore = create((set, get) => ({
     },
 
     getProfitLoss: () => {
-        const INITIAL_CASH = 1000; // Hardcoded initial cash amount
+        const INITIAL_CASH = 3000; // Hardcoded initial cash amount
         const currentTotalAssets = get().getTotalAssets();
 
         // Simple P&L: current total assets minus initial cash
