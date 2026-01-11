@@ -1,6 +1,7 @@
 import Navbar from "./components/Navbar";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
+import LandingPage from "./pages/LandingPage";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";;
@@ -51,6 +52,23 @@ const App = () => {
   const admin = authUser && isAdmin;
   const user = authUser && !isAdmin;
 
+  // If not authenticated, show landing page
+  if (!authUser) {
+    return (
+      <div className="relative h-screen w-full bg-black overflow-hidden">
+        <div className="relative z-10 h-full overflow-y-auto">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
       {/* bg rgba(80,190,182,.15) */}
@@ -65,14 +83,13 @@ const App = () => {
           <Route
             path="/"
             element={
-              !authUser ? <Navigate to="/login" /> :
-                admin ? <Navigate to="/admin" /> :
-                  user ? <Navigate to="/user" /> :
-                    <Navigate to="/login" />
+              admin ? <Navigate to="/admin" /> :
+                user ? <Navigate to="/user" /> :
+                  <Navigate to="/login" />
             } />
 
-          <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
-          <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/signup" element={<Navigate to="/" />} />
+          <Route path="/login" element={<Navigate to="/" />} />
 
           <Route path="/admin" element={admin ? <AdminHome /> : <Navigate to="/" />} />
           <Route path="/admin/stocks" element={admin ? <AdminStocks /> : <Navigate to="/" />} />
