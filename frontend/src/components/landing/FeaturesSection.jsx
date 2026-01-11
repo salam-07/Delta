@@ -1,12 +1,12 @@
 import React from 'react';
-import { TrendingUp, Users, Target, CheckCircle } from 'lucide-react';
+import { TrendingUp, Users, Target, CheckCircle, Shield } from 'lucide-react';
 
 const FeaturesSection = () => {
     const features = [
         {
-            icon: TrendingUp,
-            title: 'Live Market Data',
-            description: 'Real-time stock prices, charts, and market indicators for authentic trading experience.',
+            icon: Shield,
+            title: 'Full Admin Controls',
+            description: 'Manage your competition with complete a complete admin dashboard',
         },
         {
             icon: Users,
@@ -16,7 +16,7 @@ const FeaturesSection = () => {
         {
             icon: Target,
             title: 'Competition Events',
-            description: 'Participate in time-based competitions with specific rules and objectives.',
+            description: 'Participate in time-based competitions with specific rules, objectives and gamified rewards',
         },
         {
             icon: CheckCircle,

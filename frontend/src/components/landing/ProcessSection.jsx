@@ -4,23 +4,23 @@ const ProcessSection = () => {
     const steps = [
         {
             step: '01',
-            title: 'Sign Up',
-            description: 'Create your account and set up your trading profile in minutes.',
+            title: 'Contact Us',
+            description: 'Get in touch for your personalized competition structure.',
         },
         {
             step: '02',
-            title: 'Join Competition',
-            description: 'Browse active competitions and register for events that interest you.',
+            title: 'Register Participants',
+            description: 'Register your participants, giving each user an intitial simulated wealth.',
         },
         {
             step: '03',
             title: 'Start Trading',
-            description: 'Execute trades, manage your portfolio, and implement your strategies.',
+            description: 'Execute trades, manage portfolios, and implement strategies.',
         },
         {
             step: '04',
             title: 'Track Progress',
-            description: 'Monitor your performance on leaderboards and analyze your results.',
+            description: 'Admins can monitor performance on leaderboards and analyze results.',
         },
     ];
 

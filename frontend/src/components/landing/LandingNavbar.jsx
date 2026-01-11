@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp } from 'lucide-react';
+import { ChartNoAxesCombined } from 'lucide-react';
 
 const LandingNavbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -22,13 +22,13 @@ const LandingNavbar = () => {
     ];
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-black/80 backdrop-blur-xl shadow-lg border-b border-green-500/20' : 'bg-transparent'
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-black/60 backdrop-blur-xl shadow-lg'
             }`}>
-            <div className="container mx-auto px-4 lg:px-8">
-                <div className="flex items-center justify-between h-20">
+            <div className="container mx-auto px-4 lg:px-4">
+                <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link to="/" className="text-3xl font-bold text-white flex items-center gap-2">
-                        <TrendingUp className="text-green-500" size={32} />
+                        <ChartNoAxesCombined className="text-green-500" size={32} />
                         <span className="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
                             Delta
                         </span>
@@ -78,7 +78,7 @@ const LandingNavbar = () => {
 
                 {/* Mobile Menu */}
                 {isMobileMenuOpen && (
-                    <div className="md:hidden bg-black/95 backdrop-blur-xl border-t border-green-500/20">
+                    <div className="md:hidden bg-black/60 backdrop-blur-xl border-t border-green-500/20">
                         <div className="flex flex-col p-4 gap-4">
                             {navLinks.map(link => (
                                 <a

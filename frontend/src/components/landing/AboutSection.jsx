@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Users, Shield } from 'lucide-react';
+import { TrendingUp, Users, Shield, Newspaper } from 'lucide-react';
 
 const AboutSection = () => {
     return (
@@ -21,7 +21,7 @@ const AboutSection = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="about-content glass-card p-8 rounded-2xl backdrop-blur-xl bg-white/5 border border-green-500/20 hover:border-green-500/40 transition-all">
                         <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6">
                             <TrendingUp size={32} className="text-black" />
@@ -50,6 +50,15 @@ const AboutSection = () => {
                         <p className="text-gray-400">
                             Practice trading strategies without financial risk in our secure simulation environment.
                         </p>
+                    </div>
+
+                    <div className="about-content glass-card p-8 rounded-2xl backdrop-blur-xl bg-white/5 border border-green-500/20 hover:border-green-500/40 transition-all">
+                        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+                            <Newspaper size={32} className="text-black" />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-4">Personalized News & Current Affairs</h3>
+                        <p className="text-gray-400">
+                            Learn to maneuver in current or past market situations, personalized to your competing audience                        </p>
                     </div>
                 </div>
             </div>

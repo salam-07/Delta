@@ -4,19 +4,19 @@ import { MessageCircle } from 'lucide-react';
 const TestimonialsSection = () => {
     const testimonials = [
         {
-            quote: "Delta transformed how I understand stock markets. The competitions are intense and educational!",
-            author: "Sarah Chen",
+            quote: "Our school held a competition on Delta and it changed how I understand stock markets. The competitions are intense and educational!",
+            author: "Uzair",
             role: "Finance Student",
         },
         {
-            quote: "Best platform for practicing trading strategies. The real-time data makes it feel authentic.",
-            author: "Michael Rodriguez",
-            role: "Investment Club President",
+            quote: "Students loved the series of stock markets we held in classes. This platform is brilliant for an introduction to not only stocks, but understanding current affairs and world news.",
+            author: "Ayesha",
+            role: "School Principal",
         },
         {
-            quote: "Our entire class uses Delta for market simulations. The analytics are incredibly detailed.",
-            author: "Dr. James Wilson",
-            role: "Economics Professor",
+            quote: "As an administrator of one of these events, I loved the analytics dashboard. I get to teach students where I have seen them lack in real markets.",
+            author: "Asim",
+            role: "Finance and Economics Professor",
         },
     ];
 

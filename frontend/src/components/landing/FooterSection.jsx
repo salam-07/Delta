@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp } from 'lucide-react';
+import { ChartNoAxesCombined } from 'lucide-react';
 
 const FooterSection = () => {
     return (
@@ -9,7 +9,7 @@ const FooterSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <TrendingUp className="text-green-500" size={28} />
+                            <ChartNoAxesCombined className="text-green-500" size={28} />
                             <span className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
                                 Delta
                             </span>

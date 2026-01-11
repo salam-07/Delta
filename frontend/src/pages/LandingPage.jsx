@@ -9,6 +9,7 @@ import {
     FeaturesSection,
     MissionSection,
     ProcessSection,
+    PricingSection,
     TestimonialsSection,
     ContactSection,
     FooterSection
@@ -38,6 +39,7 @@ const LandingPage = () => {
             <FeaturesSection />
             <MissionSection />
             <ProcessSection />
+            <PricingSection />
             <TestimonialsSection />
             <ContactSection />
             <FooterSection />

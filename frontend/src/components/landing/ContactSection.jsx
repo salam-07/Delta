@@ -21,12 +21,12 @@ const ContactSection = () => {
                     <div className="glass-card p-6 rounded-2xl backdrop-blur-xl bg-white/5 border border-green-500/20 text-center">
                         <Mail className="mx-auto mb-4 text-green-400" size={32} />
                         <h3 className="font-bold mb-2">Email</h3>
-                        <p className="text-gray-400 text-sm">support@delta.com</p>
+                        <p className="text-gray-400 text-sm">abdussalamameen26@gmail.com</p>
                     </div>
                     <div className="glass-card p-6 rounded-2xl backdrop-blur-xl bg-white/5 border border-green-500/20 text-center">
                         <Phone className="mx-auto mb-4 text-green-400" size={32} />
                         <h3 className="font-bold mb-2">Phone</h3>
-                        <p className="text-gray-400 text-sm">+1 (555) 123-4567</p>
+                        <p className="text-gray-400 text-sm">+92 333 7298886</p>
                     </div>
                     <div className="glass-card p-6 rounded-2xl backdrop-blur-xl bg-white/5 border border-green-500/20 text-center">
                         <MapPin className="mx-auto mb-4 text-green-400" size={32} />

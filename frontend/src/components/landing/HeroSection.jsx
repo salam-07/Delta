@@ -64,17 +64,6 @@ const HeroSection = () => {
             repeat: -1,
             ease: 'none',
         });
-
-        // Pulsing animation for particles
-        gsap.to('.hero-particle', {
-            scale: 1.5,
-            opacity: 0.3,
-            duration: 2,
-            ease: 'power1.inOut',
-            yoyo: true,
-            repeat: -1,
-            stagger: { each: 0.3, from: 'random' },
-        });
     }, { scope: heroRef });
 
     return (
@@ -90,21 +79,6 @@ const HeroSection = () => {
                         key={i}
                         className="hero-grid-line absolute top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-green-500/20 to-transparent origin-top"
                         style={{ left: `${12.5 * (i + 1)}%` }}
-                    />
-                ))}
-            </div>
-
-            {/* Floating Particles */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(20)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="hero-particle absolute w-1 h-1 bg-green-400 rounded-full"
-                        style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            opacity: 0.4,
-                        }}
                     />
                 ))}
             </div>
@@ -228,7 +202,7 @@ const HeroSection = () => {
                     Experience immersive, personalized financial market simulations designed to{' '}
                     <span className="text-green-400 font-semibold">educate</span>,{' '}
                     <span className="text-emerald-400 font-semibold">challenge</span>, and{' '}
-                    <span className="text-green-300 font-semibold">inspire</span> the next generation of traders
+                    <span className="text-green-300 font-semibold">inspire</span> a financially responsible generation.
                 </p>
 
                 {/* CTA Buttons */}
@@ -274,15 +248,15 @@ const HeroSection = () => {
                 {/* Stats */}
                 <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-16 mt-20 pt-10 border-t border-gray-800/50">
                     <div className="hero-stat text-center group cursor-default">
-                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">10K+</div>
+                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">600+</div>
                         <div className="text-sm text-gray-400 mt-2 uppercase tracking-wider">Active Participants</div>
                     </div>
                     <div className="hero-stat text-center group cursor-default">
-                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">50+</div>
+                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">10+</div>
                         <div className="text-sm text-gray-400 mt-2 uppercase tracking-wider">Competitions Run</div>
                     </div>
                     <div className="hero-stat text-center group cursor-default">
-                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">$1M+</div>
+                        <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 transition-transform">$16M+</div>
                         <div className="text-sm text-gray-400 mt-2 uppercase tracking-wider">Simulated Volume</div>
                     </div>
                 </div>
