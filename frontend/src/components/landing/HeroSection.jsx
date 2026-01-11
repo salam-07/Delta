@@ -153,9 +153,10 @@ const HeroSection = () => {
                 </div>
 
                 {/* Gradient overlays for depth */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-black"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.7)_50%,rgba(0,0,0,0.95)_100%)]"></div>
+                {/* Side shadows - smaller on mobile, larger on desktop */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50 md:from-black md:to-black"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-black/30 to-black md:via-black/50"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_60%,rgba(0,0,0,0.85)_100%)] md:bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.7)_50%,rgba(0,0,0,0.95)_100%)]"></div>
 
                 {/* Green glow on images */}
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5"></div>

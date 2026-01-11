@@ -18,7 +18,8 @@ const PricingSection = () => {
                             </span>
                         </h2>
                         <p className="text-gray-400 max-w-xl mx-auto">
-                            We offer our competitions at any price — even free. Financial education should be accessible to everyone.
+                            We offer our competitions at any price, even free. Financial education should be accessible to everyone.
+                            We donate most of the grants we recieve.
                         </p>
                     </div>
 
