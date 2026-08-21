@@ -14,125 +14,12 @@
 	scrollbar-width: none; /* For Firefox */
 }
 
-/* Glass Card Effect */
-.glass-card {
-	background: rgba(255, 255, 255, 0.03);
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	border: 1px solid rgba(34, 197, 94, 0.2);
-	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-.glass-card:hover {
-	background: rgba(255, 255, 255, 0.05);
-	border-color: rgba(34, 197, 94, 0.4);
-	box-shadow: 0 12px 48px 0 rgba(34, 197, 94, 0.2);
-}
-
 /* Smooth Scrolling */
 html {
 	scroll-behavior: smooth;
 }
 
-/* Hero Float Animation */
-@keyframes float {
-	0%, 100% {
-		transform: translateY(0px);
-	}
-	50% {
-		transform: translateY(-20px);
-	}
-}
-
-.hero-float {
-	animation: float 6s ease-in-out infinite;
-}
-
-/* Gradient Text */
-.gradient-text {
-	background: linear-gradient(to right, #22c55e, #10b981);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	background-clip: text;
-}
-
-/* Perspective for 3D effects */
-.perspective-1000 {
-	perspective: 1000px;
-}
-
-/* Conic gradient for rotating glow */
-.bg-gradient-conic {
-	background: conic-gradient(var(--tw-gradient-stops));
-}
-
-/* Animated border */
-@keyframes border-glow {
-	0%, 100% {
-		border-color: rgba(34, 197, 94, 0.3);
-	}
-	50% {
-		border-color: rgba(34, 197, 94, 0.6);
-	}
-}
-
-.animate-border-glow {
-	animation: border-glow 3s ease-in-out infinite;
-}
-
-/* Shimmer effect for buttons */
-@keyframes shimmer {
-	0% {
-		background-position: -200% 0;
-	}
-	100% {
-		background-position: 200% 0;
-	}
-}
-
-.shimmer {
-	background: linear-gradient(
-		90deg,
-		transparent,
-		rgba(255, 255, 255, 0.1),
-		transparent
-	);
-	background-size: 200% 100%;
-	animation: shimmer 2s infinite;
-}
-
-/* Glow pulse animation */
-@keyframes glow-pulse {
-	0%, 100% {
-		opacity: 0.5;
-		transform: scale(1);
-	}
-	50% {
-		opacity: 0.8;
-		transform: scale(1.05);
-	}
-}
-
-.animate-glow-pulse {
-	animation: glow-pulse 4s ease-in-out infinite;
-}
-
-/* Text shadow for depth */
-.text-shadow-glow {
-	text-shadow: 0 0 40px rgba(34, 197, 94, 0.5);
-}
-
-/* Hover lift effect */
-.hover-lift {
-	transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.hover-lift:hover {
-	transform: translateY(-4px);
-	box-shadow: 0 20px 40px rgba(34, 197, 94, 0.2);
-}
-
-/* Infinite Marquee Animations */
+/* Infinite Marquee Animations — still used by admin/AdminDisplay.jsx */
 @keyframes marquee-left {
 	0% {
 		transform: translateX(0);
@@ -161,4 +48,226 @@ html {
 
 .animate-marquee-left-slow {
 	animation: marquee-left 45s linear infinite;
+}
+
+/* ==========================================================================
+   TERMINAL LAYER — Delta landing page only.
+   Scoped under .delta-term so the daisyUI "forest" theme and the app's other
+   surfaces are untouched. See the direction contract in index.html.
+   ========================================================================== */
+
+.delta-term {
+	--ink: #050A07;
+	--ink-panel: #0A130D;
+	--phos: #31D96A;
+	--phos-bright: #A8E6BF;
+	--phos-mid: #4FAE79;
+	--phos-dim: #1C5C38;
+	--cyan: #22D3EE;
+	--rule: rgba(49, 217, 106, 0.16);
+	--rule-strong: rgba(49, 217, 106, 0.38);
+
+	background-color: var(--ink);
+	color: var(--phos-bright);
+	font-family: "Commit Mono", ui-monospace, SFMono-Regular, monospace;
+	font-variant-ligatures: none;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* The global outline reset above is an accessibility hazard. Restore a real,
+   in-world focus ring on this surface. !important is required to win. */
+.delta-term a:focus-visible,
+.delta-term button:focus-visible,
+.delta-term [tabindex]:focus-visible {
+	outline: 2px solid var(--phos) !important;
+	outline-offset: 2px !important;
+	background-color: rgba(49, 217, 106, 0.14);
+}
+
+/* --- Phosphor bloom. Emissive type on glass, not a decorative glow. ------- */
+.bloom {
+	text-shadow: 0 0 12px rgba(49, 217, 106, 0.45), 0 0 2px rgba(49, 217, 106, 0.7);
+}
+.bloom-soft {
+	text-shadow: 0 0 10px rgba(49, 217, 106, 0.28);
+}
+.bloom-cyan {
+	text-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+}
+.bloom-up {
+	text-shadow: 0 0 10px rgba(91, 255, 143, 0.45);
+}
+.bloom-down {
+	text-shadow: 0 0 10px rgba(255, 65, 54, 0.45);
+}
+
+/* --- The glass itself: scanlines, aperture grille, vignette. -------------- */
+.crt-glass::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 40;
+	background-image: repeating-linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0) 0px,
+		rgba(0, 0, 0, 0) 2px,
+		rgba(0, 0, 0, 0.34) 3px,
+		rgba(0, 0, 0, 0.34) 4px
+	);
+	mix-blend-mode: multiply;
+}
+
+.crt-glass::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 41;
+	background: radial-gradient(
+		ellipse 118% 128% at 50% 50%,
+		rgba(0, 0, 0, 0) 52%,
+		rgba(0, 0, 0, 0.5) 84%,
+		rgba(0, 0, 0, 0.9) 100%
+	);
+}
+
+/* One slow sweep, the way a mistimed refresh crawls up a real tube. */
+.crt-sweep {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 34vh;
+	pointer-events: none;
+	z-index: 39;
+	background: linear-gradient(
+		to bottom,
+		rgba(49, 217, 106, 0) 0%,
+		rgba(49, 217, 106, 0.035) 50%,
+		rgba(49, 217, 106, 0) 100%
+	);
+	animation: scan-sweep 7s linear infinite;
+}
+
+@keyframes scan-sweep {
+	0% {
+		transform: translateY(-40vh);
+	}
+	100% {
+		transform: translateY(140vh);
+	}
+}
+
+/* --- Board character cells ------------------------------------------------ */
+.board-row {
+	border-bottom: 1px solid var(--rule);
+}
+
+.cell {
+	display: inline-block;
+	transform-origin: center;
+	backface-visibility: hidden;
+}
+
+.cell-flip {
+	animation: cell-flip 260ms ease-in-out;
+}
+
+@keyframes cell-flip {
+	0% {
+		transform: rotateX(0deg);
+		opacity: 1;
+	}
+	45% {
+		transform: rotateX(-88deg);
+		opacity: 0.2;
+	}
+	100% {
+		transform: rotateX(0deg);
+		opacity: 1;
+	}
+}
+
+/* --- Docked panels: opaque where text sits, so the board never fights it. - */
+.dock {
+	position: relative;
+	background-color: rgba(5, 10, 7, 0.955);
+	border: 1px solid var(--rule-strong);
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85), 0 24px 70px -12px rgba(0, 0, 0, 0.95);
+}
+
+.dock-tab {
+	background-color: var(--phos);
+	color: var(--ink);
+}
+
+/* Corner ticks — the registration marks a real terminal panel is drawn with. */
+.dock-ticks::before,
+.dock-ticks::after {
+	content: "";
+	position: absolute;
+	width: 9px;
+	height: 9px;
+	pointer-events: none;
+	border-color: var(--phos);
+}
+.dock-ticks::before {
+	top: -1px;
+	left: -1px;
+	border-top: 2px solid;
+	border-left: 2px solid;
+}
+.dock-ticks::after {
+	bottom: -1px;
+	right: -1px;
+	border-bottom: 2px solid;
+	border-right: 2px solid;
+}
+
+/* --- Real event photography, treated as floor footage. -------------------
+   The source photos are genuine (participants using Delta) but weren't shot
+   for display, so they run as a green-phosphor underlayer: legible as people
+   at screens, never competing with the panel text above them. */
+.floor-photo {
+	filter: grayscale(1) contrast(1.28) brightness(0.52) sepia(0.62)
+		hue-rotate(100deg) saturate(2.2);
+}
+
+.floor-photo-tint {
+	background: linear-gradient(
+		to bottom,
+		rgba(5, 10, 7, 0.72) 0%,
+		rgba(5, 10, 7, 0.9) 60%,
+		rgba(5, 10, 7, 0.98) 100%
+	);
+}
+
+/* --- Lamp ---------------------------------------------------------------- */
+.lamp {
+	animation: lamp 1.6s steps(2, end) infinite;
+}
+
+@keyframes lamp {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+}
+
+/* --- Reduced motion: the board holds still and the demo shows its result. - */
+@media (prefers-reduced-motion: reduce) {
+	.delta-term .crt-sweep,
+	.delta-term .lamp,
+	.delta-term .cell-flip {
+		animation: none !important;
+	}
+	.delta-term .crt-sweep {
+		display: none;
+	}
+	html {
+		scroll-behavior: auto;
+	}
 }
