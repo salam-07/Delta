@@ -52,7 +52,7 @@ const BoardHero = () => (
 					<span className="font-board text-[26px] leading-none tracking-cell text-[#31D96A] bloom sm:w-[3.6rem] sm:shrink-0 sm:pt-3 sm:text-[22px]">
 						DELTA
 					</span>
-					<h1 className="font-board text-[15vw] font-medium uppercase leading-[0.86] tracking-cell text-[#31D96A] bloom sm:text-[9.5vw] lg:text-[7.6vw] xl:text-[6.9rem]">
+					<h1 className="font-board lg:text-[15vw] text-[8vw] font-medium uppercase leading-[0.86] tracking-cell text-[#31D96A] bloom sm:text-[9.5vw] lg:text-[7.6vw] xl:text-[6.9rem]">
 						Simulated
 						<br />
 						Stock Market
