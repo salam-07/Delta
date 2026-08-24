@@ -17,6 +17,7 @@
     "axios": "^1.11.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.542.0",
+    "ogl": "^1.0.11",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",

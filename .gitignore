@@ -24,4 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+.claude
+.github
+.impeccable
 backend/routes.md
+PRODUCT.md
+frontend/package-lock.json

@@ -101,6 +101,23 @@ html {
 	text-shadow: 0 0 10px rgba(255, 65, 54, 0.45);
 }
 
+/* --- Type sitting directly on the live FaultyTerminal (BoardHero). ---------
+   A moving glyph field behind text kills legibility, so these stack a dark
+   "knockout" halo (contrast against the tube) under the usual phosphor bloom.
+   Use these instead of .bloom / .bloom-soft anywhere text overlaps the tube. */
+.delta-term .bloom-tube {
+	text-shadow: 0 0 4px var(--ink), 0 0 9px var(--ink), 0 1px 2px rgba(0, 0, 0, 0.9),
+		0 0 14px rgba(49, 217, 106, 0.5), 0 0 3px rgba(49, 217, 106, 0.85);
+}
+.delta-term .bloom-soft-tube {
+	text-shadow: 0 0 4px var(--ink), 0 0 8px var(--ink), 0 1px 2px rgba(0, 0, 0, 0.9),
+		0 0 12px rgba(49, 217, 106, 0.3);
+}
+/* Small cyan/bright labels, body copy and links: dark halo only, no glow. */
+.delta-term .on-tube {
+	text-shadow: 0 0 4px var(--ink), 0 0 8px var(--ink), 0 1px 2px rgba(0, 0, 0, 0.92);
+}
+
 /* --- The glass itself: scanlines, aperture grille, vignette. -------------- */
 .crt-glass::before {
 	content: "";
