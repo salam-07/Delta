@@ -60,28 +60,33 @@ const BoardHero = () => {
 			{/* The commandeered block. The tube lives inside it; content sits on z-10.
 			    Base ink stays as a fallback if WebGL is unavailable. */}
 			<div className="relative overflow-hidden bg-[#050A07] shadow-[0_0_90px_30px_rgba(5,10,7,0.97)]">
-				{/* Living background: dim, green-tinted, slow. Decorative only. */}
-				<FaultyTerminal
-					aria-hidden="true"
-					className="absolute inset-0 z-0"
-					scale={1.6}
-					gridMul={GRID_MUL}
-					digitSize={1.3}
-					timeScale={0.35}
-					pause={reduced}
-					scanlineIntensity={0.5}
-					glitchAmount={1}
-					flickerAmount={0.6}
-					noiseAmp={1}
-					chromaticAberration={0}
-					dither={0}
-					curvature={0.1}
-					tint="#31D96A"
-					mouseReact={!reduced}
-					mouseStrength={0.35}
-					pageLoadAnimation={!reduced}
-					brightness={0.45}
-				/>
+				{/* Living background: dim, green-tinted, slow. Decorative only.
+				    The wrapper owns the absolute positioning so the component's own
+				    `.faulty-terminal-container { position: relative }` doesn't fight a
+				    Tailwind `absolute` (equal specificity, its CSS loads later). */}
+				<div aria-hidden="true" className="absolute inset-0 z-0">
+					<FaultyTerminal
+						scale={1.6}
+						gridMul={GRID_MUL}
+						digitSize={1.3}
+						timeScale={0.35}
+						pause={reduced}
+						scanlineIntensity={0.5}
+						glitchAmount={1}
+						flickerAmount={0.6}
+						noiseAmp={1}
+						chromaticAberration={0}
+						dither={0}
+						curvature={0.1}
+						tint="#31D96A"
+						mouseReact={!reduced}
+						mouseStrength={0.55}
+						pageLoadAnimation={!reduced}
+						brightness={0.45}
+						resolutionScale={0.5}
+						fps={30}
+					/>
+				</div>
 
 				{/* Readability scrim: lightest behind the display type, darker over the
 				    rows of small copy below, and dark at the edges to meet the rules. */}
@@ -115,7 +120,7 @@ const BoardHero = () => {
 						<span className="font-board text-[26px] leading-none tracking-cell text-[#31D96A] bloom-tube sm:w-[3.6rem] sm:shrink-0 sm:pt-3 sm:text-[22px]">
 							DELTA
 						</span>
-						<h1 className="font-board text-[15vw] font-medium uppercase leading-[0.86] tracking-cell text-[#31D96A] bloom-tube sm:text-[9.5vw] lg:text-[7.6vw] xl:text-[6.9rem]">
+						<h1 className="font-board lg:text-[15vw] text-[8vw] font-medium uppercase leading-[0.86] tracking-cell text-[#31D96A] bloom-tube sm:text-[9.5vw] lg:text-[7.6vw] xl:text-[6.9rem]">
 							Simulated
 							<br />
 							Stock Market

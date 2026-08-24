@@ -236,6 +236,8 @@ export default function FaultyTerminal({
   mouseReact = true,
   mouseStrength = 0.2,
   dpr = Math.min(window.devicePixelRatio || 1, 2),
+  resolutionScale = 1,
+  fps = 0,
   pageLoadAnimation = true,
   brightness = 1,
   className = '',
@@ -256,20 +258,41 @@ export default function FaultyTerminal({
 
   const ditherValue = useMemo(() => (typeof dither === 'boolean' ? (dither ? 1 : 0) : dither), [dither]);
 
-  const handleMouseMove = useCallback(e => {
+  const setPointer = useCallback((clientX, clientY) => {
     const ctn = containerRef.current;
     if (!ctn) return;
     const rect = ctn.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = 1 - (e.clientY - rect.top) / rect.height;
-    mouseRef.current = { x, y };
+    mouseRef.current = {
+      x: (clientX - rect.left) / rect.width,
+      y: 1 - (clientY - rect.top) / rect.height
+    };
   }, []);
+
+  const handleMouseMove = useCallback(e => setPointer(e.clientX, e.clientY), [setPointer]);
+
+  // Touch devices never emit mousemove, so mirror the pointer onto the first
+  // active touch. Registered passively and without preventDefault, so following
+  // a finger costs nothing and never blocks the page from scrolling under it.
+  const handleTouchMove = useCallback(
+    e => {
+      const touch = e.touches[0];
+      if (touch) setPointer(touch.clientX, touch.clientY);
+    },
+    [setPointer]
+  );
 
   useEffect(() => {
     const ctn = containerRef.current;
     if (!ctn) return;
 
     const renderer = new Renderer({ dpr });
+    // Render the backing store below display resolution. The fragment count
+    // scales with the square of this factor, and this shader is the page's
+    // single most expensive operation — but the tube is a dim, blurred,
+    // heavily-scrimmed decorative wall, so a lower internal resolution is
+    // invisible. The canvas CSS size still fills the container (ogl sizes the
+    // backing store as offset * dpr while keeping style width/height in CSS px).
+    renderer.dpr = dpr * resolutionScale;
     rendererRef.current = renderer;
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 1);
@@ -324,8 +347,35 @@ export default function FaultyTerminal({
     resizeObserver.observe(ctn);
     resize();
 
-    const update = t => {
+    // Pause all rendering when the tube isn't on screen. BoardHero is the first
+    // viewport; once the reader scrolls into the panels below, there's no reason
+    // to keep evaluating a heavy fragment shader behind them. Defaults to
+    // visible so the tube always paints when IntersectionObserver is absent.
+    let visible = true;
+    const visibilityObserver =
+      typeof IntersectionObserver !== 'undefined'
+        ? new IntersectionObserver(
+            (entries) => {
+              visible = entries[entries.length - 1].isIntersecting;
+            },
+            { rootMargin: '120px' }
+          )
+        : null;
+    visibilityObserver?.observe(ctn);
+
+    // Cap the tube's refresh independently of the display. The motion is slow
+    // (timeScale ~0.35), so 30fps reads identically to 60 while halving the
+    // per-second GPU/JS cost — and it leaves the main thread free to keep the
+    // rest of the page scrolling at 60fps. fps = 0 means uncapped.
+    const frameInterval = fps > 0 ? 1000 / fps : 0;
+    let lastFrameTime = 0;
+
+    const update = (t) => {
       rafRef.current = requestAnimationFrame(update);
+
+      if (!visible) return;
+      if (frameInterval && t - lastFrameTime < frameInterval) return;
+      lastFrameTime = t;
 
       if (pageLoadAnimation && loadAnimationStartRef.current === 0) {
         loadAnimationStartRef.current = t;
@@ -363,12 +413,26 @@ export default function FaultyTerminal({
     rafRef.current = requestAnimationFrame(update);
     ctn.appendChild(gl.canvas);
 
-    if (mouseReact) ctn.addEventListener('mousemove', handleMouseMove);
+    // Listen on window, not the container: the terminal is often a background
+    // layer with a scrim and content stacked on top of it (see BoardHero), so
+    // the pointer is never over the canvas itself. The handlers normalize
+    // against the container's rect, so a window-level listener still maps to
+    // the right cell — for both a cursor and a finger.
+    if (mouseReact) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('touchstart', handleTouchMove, { passive: true });
+      window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    }
 
     return () => {
       cancelAnimationFrame(rafRef.current);
       resizeObserver.disconnect();
-      if (mouseReact) ctn.removeEventListener('mousemove', handleMouseMove);
+      visibilityObserver?.disconnect();
+      if (mouseReact) {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('touchstart', handleTouchMove);
+        window.removeEventListener('touchmove', handleTouchMove);
+      }
       if (gl.canvas.parentElement === ctn) ctn.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       loadAnimationStartRef.current = 0;
@@ -376,6 +440,8 @@ export default function FaultyTerminal({
     };
   }, [
     dpr,
+    resolutionScale,
+    fps,
     pause,
     timeScale,
     scale,
@@ -393,7 +459,8 @@ export default function FaultyTerminal({
     mouseStrength,
     pageLoadAnimation,
     brightness,
-    handleMouseMove
+    handleMouseMove,
+    handleTouchMove
   ]);
 
   return <div ref={containerRef} className={`faulty-terminal-container ${className}`} style={style} {...rest} />;
