@@ -1,48 +1,22 @@
-import React, { useEffect, useMemo } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
-import { useAdminStore } from '../../store/useAdminStore';
-import { useSocketStore } from '../../store/useSocketStore';
+import { useEffect } from "react";
+import { RefreshCw } from "lucide-react";
+import AdminLayout from "../../layouts/AdminLayout";
+import { useAdminStore } from "../../store/useAdminStore";
+import { useSocketStore } from "../../store/useSocketStore";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { Change, Readout, ReadoutStrip } from "../../components/ui/Readout";
+import { EmptyState, ErrorPanel, LoadingPanel, Lamp, StatusPill } from "../../components/ui/Feedback";
+import { count, dateTime, money, signedPercent } from "../../lib/format";
 
-const StatCard = ({ title, value, subtitle, trend, size = 'large' }) => (
-    <div className="bg-black/20 backdrop-blur-sm border border-green-500/20 p-6 rounded-lg hover:border-green-400/40 transition-all duration-300">
-        <div className="space-y-2">
-            <p className="text-white/70 text-sm font-medium tracking-wide uppercase">{title}</p>
-            <p className={`font-bold text-green-400 ${size === 'xl' ? 'text-8xl' : size === 'large' ? 'text-6xl' : 'text-4xl'} leading-none`}>
-                {value}
-            </p>
-            {subtitle && (
-                <p className="text-white/60 text-sm">{subtitle}</p>
-            )}
-        </div>
-        {trend && (
-            <div className="mt-3 flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${trend.positive ? 'bg-green-400' : 'bg-white/40'}`}></div>
-                <span className={`text-sm font-medium ${trend.positive ? 'text-green-400' : 'text-white/60'}`}>
-                    {trend.value}
-                </span>
-            </div>
-        )}
-    </div>
-);
-
-const MetricCard = ({ title, children }) => (
-    <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 p-6 rounded-lg">
-        <h3 className="text-green-400 font-semibold text-lg mb-6 tracking-wide">{title}</h3>
-        <div className="space-y-4">
-            {children}
-        </div>
-    </div>
-);
-
-const MetricRow = ({ label, value, accent = false }) => (
-    <div className="flex justify-between items-center py-2 border-b border-white/5">
-        <span className="text-white/70 text-sm">{label}</span>
-        <span className={`font-bold text-lg ${accent ? 'text-green-400' : 'text-white'}`}>
-            {value}
-        </span>
-    </div>
-);
-
+/**
+ * Analytics: the competition's state in figures.
+ *
+ * Ruled readout strips grouped by subject, not a page of stat cards. Every
+ * figure used to be its own bordered card with a `text-6xl` value — four across
+ * at that size, plus two at `text-8xl` above them — and the detail rows sat in
+ * cards nested inside cards.
+ */
 const AdminAnalytics = () => {
     const { analytics, isAnalyticsLoading, getAnalytics } = useAdminStore();
     const { onlineUsers } = useSocketStore();
@@ -51,247 +25,191 @@ const AdminAnalytics = () => {
         getAnalytics();
     }, [getAnalytics]);
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    };
+    const refresh = (
+        <Button size="sm" variant="ghost" onClick={getAnalytics} disabled={isAnalyticsLoading}>
+            <RefreshCw
+                className={`size-3 shrink-0 ${isAnalyticsLoading ? "animate-spin" : ""}`}
+                aria-hidden="true"
+            />
+            Refresh
+        </Button>
+    );
 
-    const formatNumber = (num) => {
-        return new Intl.NumberFormat('en-US').format(num);
-    };
-
-    const formatCompact = (num) => {
-        return new Intl.NumberFormat('en-US', {
-            notation: 'compact',
-            maximumFractionDigits: 1
-        }).format(num);
-    };
-
-    // Memoized hero stats
-    const formattedStats = useMemo(() => ([
-        {
-            title: 'Total System Value',
-            value: formatCompact(analytics?.overview?.totalAssets || 0),
-            subtitle: 'Combined portfolio and cash holdings',
-            size: 'xl',
-        },
-        {
-            title: 'Trading Volume',
-            value: formatCompact(analytics?.overview?.totalTradeVolume || 0),
-            subtitle: 'All-time cumulative volume',
-            size: 'xl',
-        },
-    ]), [analytics]);
-
-    // Memoized overview grid
-    const overviewStats = useMemo(() => ([
-        {
-            title: 'Active Users',
-            value: formatNumber(analytics?.overview?.totalUsers || 0),
-            subtitle: 'Total registered users',
-            trend: {
-                positive: (analytics?.userMetrics?.userGrowthRate || 0) > 0,
-                value: `${analytics?.userMetrics?.userGrowthRate || 0}% growth`,
-            },
-        },
-        {
-            title: 'Total Trades',
-            value: formatNumber(analytics?.overview?.totalTrades || 0),
-            subtitle: 'All trades executed',
-        },
-        {
-            title: 'Listed Stocks',
-            value: formatNumber(analytics?.overview?.totalStocks || 0),
-            subtitle: `${analytics?.stockMetrics?.stocksWithPriceIncrease || 0} currently rising`,
-        },
-        {
-            title: 'Market',
-            value: analytics?.overview?.marketOpen ? 'OPEN' : 'CLOSED',
-            subtitle: 'Trading Status',
-            trend: {
-                positive: analytics?.overview?.marketOpen,
-                value: analytics?.overview?.marketOpen ? 'Active trading' : 'Market closed',
-            },
-        },
-    ]), [analytics]);
-
-    // Memoized metric card data
-    const userMetrics = useMemo(() => ([
-        { label: 'Total Registered', value: formatNumber(analytics?.userMetrics?.totalUsers || 0), accent: true },
-        { label: 'Active Investors', value: formatNumber(analytics?.userMetrics?.totalInvestedUsers || 0) },
-        { label: 'Investment Rate', value: `${analytics?.userMetrics?.tradingActivityRate || 0}%` },
-        { label: 'With Portfolios', value: formatNumber(analytics?.userMetrics?.usersWithPortfolio || 0) },
-    ]), [analytics]);
-
-    const tradingMetrics = useMemo(() => ([
-        { label: 'Total Volume', value: formatCurrency(analytics?.overview?.totalTradeVolume || 0), accent: true },
-        { label: 'Total Trades', value: formatNumber(analytics?.overview?.totalTrades || 0) },
-        { label: 'Buy Orders', value: formatNumber(analytics?.tradingMetrics?.buyTrades || 0) },
-        { label: 'Sell Orders', value: formatNumber(analytics?.tradingMetrics?.sellTrades || 0) },
-        { label: 'Avg Trade Size', value: formatCurrency(analytics?.tradingMetrics?.averageTradeSize || 0) },
-    ]), [analytics]);
-
-    const marketHealth = useMemo(() => ([
-        { label: 'Total Cash', value: formatCurrency(analytics?.overview?.totalCashBalance || 0), accent: true },
-        { label: 'Portfolio Value', value: formatCurrency(analytics?.overview?.totalPortfolioValue || 0) },
-        { label: 'Stocks Rising', value: formatNumber(analytics?.stockMetrics?.stocksWithPriceIncrease || 0) },
-        { label: 'Stocks Falling', value: formatNumber(analytics?.stockMetrics?.stocksWithPriceDecrease || 0) },
-    ]), [analytics]);
-
-    // Memoized top stocks
-    const topStocks = useMemo(() => analytics?.stockMetrics?.topPerformingStocks?.slice(0, 3) || [], [analytics]);
-    const mostHeldStock = useMemo(() => analytics?.stockMetrics?.mostHeldStock, [analytics]);
-
-    if (isAnalyticsLoading) {
+    if (!analytics) {
         return (
-            <AdminLayout title="Analytics">
-                <div className="flex justify-center items-center h-96">
-                    <div className="relative">
-                        <div className="animate-spin rounded-full h-16 w-16 border-2 border-green-400/20"></div>
-                        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-green-400 absolute top-0"></div>
-                    </div>
-                </div>
+            <AdminLayout title="Analytics" actions={refresh}>
+                <Panel>
+                    {isAnalyticsLoading ? (
+                        <LoadingPanel label="Loading analytics" />
+                    ) : (
+                        <ErrorPanel
+                            label="Analytics unavailable"
+                            description="The figures could not be loaded."
+                            action={
+                                <Button variant="primary" onClick={getAnalytics}>
+                                    Try again
+                                </Button>
+                            }
+                        />
+                    )}
+                </Panel>
             </AdminLayout>
         );
     }
 
+    const { overview, userMetrics, tradingMetrics, stockMetrics, contentMetrics, recentActivity } = analytics;
+    const movers = stockMetrics?.topPerformingStocks ?? [];
+    const mostHeld = stockMetrics?.mostHeldStock;
+    const recent = recentActivity?.recentTrades ?? [];
+
     return (
-        <AdminLayout title="Analytics">
-            <div className="space-y-8">
-                {/* Hero Stats */}
+        <AdminLayout title="Analytics" actions={refresh}>
+            <div className="space-y-6">
+                <Panel ticks>
+                    <PanelHeader label="System">
+                        <span className="flex items-center gap-2 font-term text-[11px] uppercase tracking-label">
+                            <Lamp on={overview?.marketOpen} />
+                            <span className={overview?.marketOpen ? "text-signal-up" : "text-signal-down"}>
+                                {overview?.marketOpen ? "Market open" : "Market closed"}
+                            </span>
+                        </span>
+                    </PanelHeader>
+                    <ReadoutStrip cols={4}>
+                        <Readout
+                            label="Value in play"
+                            value={money(overview?.totalAssets)}
+                            note="Cash plus holdings at live prices"
+                            tone="accent"
+                        />
+                        <Readout label="Cash held" value={money(overview?.totalCashBalance)} />
+                        <Readout label="Holdings" value={money(overview?.totalPortfolioValue)} />
+                        <Readout
+                            label="Traded volume"
+                            value={money(overview?.totalTradeVolume)}
+                            note="All-time, both sides"
+                        />
+                    </ReadoutStrip>
+                </Panel>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {formattedStats.map((stat) => (
-                        <StatCard key={stat.title} {...stat} />
-                    ))}
-                </div>
+                <Panel>
+                    <PanelHeader label="Participants" />
+                    <ReadoutStrip cols={4}>
+                        <Readout label="Registered" value={count(overview?.totalUsers)} />
+                        <Readout label="Online now" value={count(onlineUsers.length)} tone="accent" />
+                        <Readout
+                            label="Holding a position"
+                            value={count(userMetrics?.totalInvestedUsers)}
+                            note={`${signedPercent(userMetrics?.tradingActivityRate).replace("+", "")} of the field`}
+                        />
+                        <Readout label="With a portfolio" value={count(userMetrics?.usersWithPortfolio)} />
+                    </ReadoutStrip>
+                </Panel>
 
-                {/* Overview Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {overviewStats.map((stat) => (
-                        <StatCard key={stat.title} {...stat} />
-                    ))}
-                </div>
+                <Panel>
+                    <PanelHeader label="Trading" />
+                    <ReadoutStrip cols={4}>
+                        <Readout label="Orders filled" value={count(tradingMetrics?.totalTrades)} />
+                        <Readout label="Buys" value={count(tradingMetrics?.buyTrades)} tone="up" />
+                        <Readout label="Sells" value={count(tradingMetrics?.sellTrades)} tone="down" />
+                        <Readout label="Average order" value={money(tradingMetrics?.averageTradeSize)} />
+                    </ReadoutStrip>
+                </Panel>
 
-                {/* Detailed Metrics */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <MetricCard title="User Analytics">
-                        {userMetrics.map((row) => (
-                            <MetricRow key={row.label} {...row} />
-                        ))}
-                    </MetricCard>
-                    <MetricCard title="Trading Activity">
-                        {tradingMetrics.map((row) => (
-                            <MetricRow key={row.label} {...row} />
-                        ))}
-                    </MetricCard>
-                    <MetricCard title="Market Health">
-                        {marketHealth.map((row) => (
-                            <MetricRow key={row.label} {...row} />
-                        ))}
-                    </MetricCard>
-                </div>
+                <Panel>
+                    <PanelHeader label="Movers">
+                        {mostHeld?.ticker && mostHeld.ticker !== "N/A" ? (
+                            <span className="font-term text-[11px] text-phosphor-mid">
+                                Most held{" "}
+                                <span className="text-phosphor">{mostHeld.ticker}</span> · {count(mostHeld.count)} holders
+                            </span>
+                        ) : null}
+                    </PanelHeader>
 
-                {/* Top Performing Stocks */}
-                <MetricCard title="Top Performing Stocks">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {topStocks.map((stock) => (
-                            <div key={stock.ticker} className="bg-black/10 p-4 rounded-lg border border-green-500/10">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p className="text-green-400 font-bold text-lg">{stock.ticker}</p>
-                                        <p className="text-white/60 text-sm">{stock.name}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-white font-semibold">{formatCurrency(stock.currentPrice)}</p>
-                                        <p className={`text-sm font-medium ${stock.changePercent >= 0 ? 'text-green-400' : 'text-white/60'}`}>
-                                            {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="w-full bg-white/5 rounded-full h-1">
-                                    <div
-                                        className={`h-1 rounded-full ${stock.changePercent >= 0 ? 'bg-green-400' : 'bg-white/20'}`}
-                                        style={{ width: `${Math.min(100, Math.abs(stock.changePercent) * 10)}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    {mostHeldStock?.ticker && (
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                            <MetricRow
-                                label="Most Held Stock"
-                                value={`${mostHeldStock.ticker} (${mostHeldStock.count} holders)`}
-                                accent
-                            />
-                        </div>
-                    )}
-                </MetricCard>
+                    <ReadoutStrip cols={3} className="border-b border-phosphor/20">
+                        <Readout label="Listed" value={count(stockMetrics?.totalStocks)} />
+                        <Readout label="Above open" value={count(stockMetrics?.stocksWithPriceIncrease)} tone="up" />
+                        <Readout label="Below open" value={count(stockMetrics?.stocksWithPriceDecrease)} tone="down" />
+                    </ReadoutStrip>
 
-                {/* System Status */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <MetricCard title="Content Management">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="text-center">
-                                <p className="text-4xl font-bold text-green-400 mb-2">
-                                    {analytics?.contentMetrics?.totalDevelopments || 0}
-                                </p>
-                                <p className="text-white/70 text-sm">Total Posts</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-4xl font-bold text-green-400 mb-2">
-                                    {analytics?.contentMetrics?.publishedDevelopments || 0}
-                                </p>
-                                <p className="text-white/70 text-sm">Published</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-4xl font-bold text-white mb-2">
-                                    {analytics?.contentMetrics?.draftDevelopments || 0}
-                                </p>
-                                <p className="text-white/70 text-sm">Drafts</p>
-                            </div>
-                        </div>
-                    </MetricCard>
-
-                    <MetricCard title="System Health">
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-white/70">Market Status</span>
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-3 h-3 rounded-full ${analytics?.systemHealth?.marketOpen ? 'bg-green-400' : 'bg-white/40'}`}></div>
-                                    <span className={`font-bold ${analytics?.systemHealth?.marketOpen ? 'text-green-400' : 'text-white'}`}>
-                                        {analytics?.systemHealth?.marketOpen ? 'OPERATIONAL' : 'CLOSED'}
+                    {movers.length === 0 ? (
+                        <EmptyState
+                            label="No listings"
+                            description="Movers are ranked once there is a stock to rank."
+                        />
+                    ) : (
+                        <ul>
+                            {movers.map((stock) => (
+                                <li
+                                    key={stock.ticker}
+                                    className="flex items-center gap-4 border-b border-phosphor/15 px-4 py-3 last:border-b-0"
+                                >
+                                    <span className="w-16 shrink-0 font-term text-sm text-phosphor">{stock.ticker}</span>
+                                    <span className="min-w-0 flex-1 truncate font-term text-xs text-phosphor-mid">
+                                        {stock.name}
                                     </span>
-                                </div>
-                            </div>
-                            <div className="bg-black/20 p-4 rounded-lg">
-                                <p className="text-6xl font-bold text-green-400 mb-2">
-                                    {onlineUsers.length}
-                                </p>
-                                <p className="text-white/70 text-sm">Users Online Now</p>
-                            </div>
-                            <div className="bg-black/20 p-4 rounded-lg">
-                                <p className="text-6xl font-bold text-green-400 mb-2">
-                                    {analytics?.systemHealth?.activeUsersPercentage || 0}%
-                                </p>
-                                <p className="text-white/70 text-sm">User Engagement Rate</p>
-                            </div>
-                        </div>
-                    </MetricCard>
-                </div>
+                                    <span className="shrink-0 font-term text-sm text-phosphor-bright">
+                                        {money(stock.currentPrice)}
+                                    </span>
+                                    <Change
+                                        absolute={stock.change}
+                                        percent={stock.changePercent}
+                                        showAbsolute={false}
+                                        className="w-24 shrink-0 justify-end text-xs"
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Panel>
 
-                {/* Actions */}
-                <div className="flex justify-end pt-6">
-                    <button
-                        onClick={getAnalytics}
-                        disabled={isAnalyticsLoading}
-                        className="px-8 py-3 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg font-medium hover:bg-green-500/30 hover:border-green-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                        {isAnalyticsLoading ? 'Refreshing Analytics...' : 'Refresh Data'}
-                    </button>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <Panel>
+                        <PanelHeader label="The wire" />
+                        <ReadoutStrip cols={3}>
+                            <Readout label="Developments" value={count(contentMetrics?.totalDevelopments)} size="sm" />
+                            <Readout
+                                label="Published"
+                                value={count(contentMetrics?.publishedDevelopments)}
+                                tone="accent"
+                                size="sm"
+                            />
+                            <Readout
+                                label="Drafts"
+                                value={count(contentMetrics?.draftDevelopments)}
+                                tone="muted"
+                                size="sm"
+                            />
+                        </ReadoutStrip>
+                    </Panel>
+
+                    <Panel>
+                        <PanelHeader label="Last five fills" />
+                        {recent.length === 0 ? (
+                            <EmptyState label="No trades yet" description="Fills appear here as they happen." />
+                        ) : (
+                            <ul>
+                                {recent.map((trade, index) => (
+                                    <li
+                                        key={`${trade.date}-${index}`}
+                                        className="flex items-center gap-3 border-b border-phosphor/15 px-4 py-2.5 last:border-b-0"
+                                    >
+                                        <StatusPill tone={trade.type === "sell" ? "halted" : "live"}>
+                                            {trade.type === "sell" ? "Sell" : "Buy"}
+                                        </StatusPill>
+                                        <span className="min-w-0 flex-1 truncate font-term text-xs text-phosphor-bright">
+                                            {trade.traderName}
+                                        </span>
+                                        <span className="shrink-0 font-term text-xs text-phosphor">
+                                            {count(trade.amount)} {trade.stockTicker}
+                                        </span>
+                                        <span className="hidden shrink-0 font-term text-[11px] text-signal-cyanDim sm:inline">
+                                            {dateTime(trade.date)}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Panel>
                 </div>
             </div>
         </AdminLayout>

@@ -1,150 +1,94 @@
 import { useState } from "react";
-import useAuthStore from "../store/useAuthStore.js";
-import { Eye, EyeOff, Loader2, Lock, Mail, ChartNoAxesCombined, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/useAuthStore";
+import AuthLayout from "../layouts/AuthLayout";
+import { Button } from "../components/ui/Button";
+import { PasswordField, TextField } from "../components/ui/Field";
+import { money } from "../lib/format";
 
+const BLANK = { fullName: "", email: "", password: "" };
+
+/** The balance every new account opens with. See the user model's default. */
+const STARTING_CASH = 3000;
+
+const MIN_PASSWORD = 4;
+
+/** Create an account and join the competition. */
 const SignUpPage = () => {
-
-    const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({
-        fullName: "",
-        email: "",
-        password: ""
-    });
-
+    const [form, setForm] = useState(BLANK);
     const { signup, isSigningUp } = useAuthStore();
 
-    const validateForm = () => {
-        if (!formData.fullName.trim()) return toast.error("Full name is required");
-        if (!formData.email.trim()) return toast.error("Email is required");
-        if (!/\S+@\S+\.\S+/.test(formData.email)) return toast.error("Invalid Email Format");
-        if (!formData.password) return toast.error("Password is required");
-        if (formData.password.length < 4) return toast.error("Password must be atleast 4 characters");
+    const setField = (name) => (e) => setForm((prev) => ({ ...prev, [name]: e.target.value }));
 
-        return true;
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const success = validateForm();
 
-        if (success === true) {
-            signup(formData);
+        if (!form.fullName.trim()) return toast.error("Enter your full name");
+        if (!form.email.trim()) return toast.error("Enter your email address");
+        if (!/\S+@\S+\.\S+/.test(form.email)) return toast.error("That email address is not valid");
+        if (!form.password) return toast.error("Choose a password");
+        if (form.password.length < MIN_PASSWORD) {
+            return toast.error(`Your password needs at least ${MIN_PASSWORD} characters`);
         }
+
+        const created = await signup({
+            fullName: form.fullName.trim(),
+            email: form.email.trim(),
+            password: form.password,
+        });
+
+        if (!created) setForm((prev) => ({ ...prev, password: "" }));
     };
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-1">
-            {/* left side */}
-            <div className="flex flex-col justify-center items-center p-6 sm:p-12">
-                <div className="w-full max-w-md space-y-8">
-                    {/* LOGO */}
-                    <div className="text-center mb-8">
-                        <div className="flex flex-col items-center gap-2 group">
-                            <div
-                                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
-              group-hover:bg-primary/20 transition-colors"
-                            >
-                                <ChartNoAxesCombined className="size-6 text-primary" />
-                            </div>
-                            <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-                            <p className="text-base-content/60">Get started with your free account</p>
-                        </div>
-                    </div>
+        <AuthLayout
+            title="Create account"
+            purpose={`You start with ${money(STARTING_CASH)} in cash and trade against everyone else on the floor.`}
+            footer={
+                <>
+                    Already registered?{" "}
+                    <Link to="/login" className="text-phosphor underline-offset-4 hover:underline">
+                        Sign in
+                    </Link>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                <TextField
+                    label="Full name"
+                    value={form.fullName}
+                    onChange={setField("fullName")}
+                    placeholder="Ada Lovelace"
+                    autoComplete="name"
+                    hint="Shown on the leaderboard and the floor display."
+                    autoFocus
+                />
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="form-control">
-                            <label className="label">
-                                <span className="label-text font-medium">Full Name</span>
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <User className="size-5 text-base-content/40" />
-                                </div>
-                                <input
-                                    type="text"
-                                    className={`input input-bordered w-full pl-10`}
-                                    placeholder="John Doe"
-                                    value={formData.fullName}
-                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                />
-                            </div>
-                        </div>
+                <TextField
+                    label="Email"
+                    type="email"
+                    value={form.email}
+                    onChange={setField("email")}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                />
 
-                        <div className="form-control">
-                            <label className="label">
-                                <span className="label-text font-medium">Email</span>
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="size-5 text-base-content/40" />
-                                </div>
-                                <input
-                                    type="email"
-                                    className={`input input-bordered w-full pl-10`}
-                                    placeholder="you@example.com"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                />
-                            </div>
-                        </div>
+                <PasswordField
+                    label="Password"
+                    value={form.password}
+                    onChange={setField("password")}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    hint={`At least ${MIN_PASSWORD} characters.`}
+                />
 
-                        <div className="form-control">
-                            <label className="label">
-                                <span className="label-text font-medium">Password</span>
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="size-5 text-base-content/40" />
-                                </div>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    className={`input input-bordered w-full pl-10`}
-                                    placeholder="••••••••"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? (
-                                        <EyeOff className="size-5 text-base-content/40" />
-                                    ) : (
-                                        <Eye className="size-5 text-base-content/40" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        <button type="submit" className="btn btn-primary w-full" disabled={isSigningUp}>
-                            {isSigningUp ? (
-                                <>
-                                    <Loader2 className="size-5 animate-spin" />
-                                    Loading...
-                                </>
-                            ) : (
-                                "Create Account"
-                            )}
-                        </button>
-                    </form>
-
-                    <div className="text-center">
-                        <p className="text-base-content/60">
-                            Already have an account?{" "}
-                            <Link to="/login" className="link link-primary">
-                                Sign in
-                            </Link>
-                        </p>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
+                <Button type="submit" variant="primary" size="lg" loading={isSigningUp} className="w-full">
+                    Create account
+                </Button>
+            </form>
+        </AuthLayout>
     );
 };
 
-export default SignUpPage;;
+export default SignUpPage;

@@ -2,9 +2,17 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+/**
+ * Every catch here used to read `error.response.data.message` directly, which
+ * itself throws when the request never reached the server — so with the backend
+ * down, signing in produced no toast at all, just a spinner that stopped and an
+ * unhandled rejection in the console.
+ */
+const authError = (error, fallback) =>
+    error?.response?.data?.message ||
+    (error?.response ? fallback : "Cannot reach the server. Check your connection and try again.");
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
     authUser: null,
     isSigningUp: false,
     isLoggingIn: false,
@@ -47,12 +55,12 @@ export const useAuthStore = create((set, get) => ({
         set({ isSigningUp: true });
         try {
             const res = await axiosInstance.post("/auth/signup", data);
-            set({ authUser: res.data });
-            // Set admin status based on role
-            set({ isAdmin: res.data?.role === "admin" });
-            toast.success("Account Created");
+            set({ authUser: res.data, isAdmin: res.data?.role === "admin" });
+            toast.success("Account created");
+            return true;
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(authError(error, "Could not create the account."));
+            return false;
         } finally {
             set({ isSigningUp: false });
         }
@@ -62,17 +70,17 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoggingIn: true });
         try {
             const res = await axiosInstance.post("/auth/login", data);
-            set({ authUser: res.data });
-            // Set admin status based on role
-            set({ isAdmin: res.data?.role === "admin" });
+            set({ authUser: res.data, isAdmin: res.data?.role === "admin" });
 
             // Connect to Socket.IO after successful login
             const { useSocketStore } = await import("./useSocketStore.js");
             useSocketStore.getState().connectSocket(res.data._id);
 
-            toast.success("Logged in successfully");
+            toast.success("Signed in");
+            return true;
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(authError(error, "Could not sign in."));
+            return false;
         } finally {
             set({ isLoggingIn: false });
         }
@@ -87,9 +95,9 @@ export const useAuthStore = create((set, get) => ({
             const { useSocketStore } = await import("./useSocketStore.js");
             useSocketStore.getState().disconnectSocket();
 
-            toast.success("Logged out succesfully");
+            toast.success("Signed out");
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(authError(error, "Could not sign out."));
         }
     },
 }));

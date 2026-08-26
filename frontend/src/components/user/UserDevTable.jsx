@@ -1,114 +1,84 @@
-import { RefreshCw } from "lucide-react";
+import { Newspaper, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Panel, PanelHeader } from "../ui/Panel";
+import { Button } from "../ui/Button";
+import { EmptyState, SkeletonRows } from "../ui/Feedback";
+import { dateTime } from "../../lib/format";
 
-const DevTable = ({
+/**
+ * The development wire: what the administrator has published into the market,
+ * newest first.
+ *
+ * A wire, not a card grid — a participant scans headlines against the clock to
+ * work out why a price moved, and a four-across grid of equal-weight cards
+ * makes that scan slower, not faster.
+ */
+const UserDevTable = ({
     devs = [],
     isLoading = false,
     onRefresh = () => { },
     showRefreshButton = true,
     title = "Developments"
 }) => {
-    // Helper function to truncate content to first few lines
-    const truncateContent = (content, maxLength = 150) => {
+    // `/market/viewdevs` already filters to published developments; this holds
+    // the guarantee at the component that renders them to participants.
+    const published = devs.filter((dev) => dev.posted === true);
+
+    const lede = (content, maxLength = 160) => {
         if (!content) return "";
         if (content.length <= maxLength) return content;
-
-        // Find the last space before maxLength to avoid cutting words
-        const truncated = content.substr(0, maxLength);
-        const lastSpace = truncated.lastIndexOf(' ');
-        return lastSpace > 0 ? truncated.substr(0, lastSpace) + "..." : truncated + "...";
+        const cut = content.slice(0, maxLength);
+        const lastSpace = cut.lastIndexOf(" ");
+        return `${lastSpace > 0 ? cut.slice(0, lastSpace) : cut}…`;
     };
 
-    // Helper function to format date
-    const formatDate = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
     return (
-        <div className="p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-white">{title}</h3>
-                {showRefreshButton && (
-                    <button
-                        onClick={onRefresh}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors hover:bg-gray-800/50"
-                    >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+        <Panel>
+            <PanelHeader label={title}>
+                {showRefreshButton ? (
+                    <Button size="sm" variant="ghost" onClick={onRefresh} disabled={isLoading}>
+                        <RefreshCw className={`size-3 shrink-0 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
                         Refresh
-                    </button>
-                )}
-            </div>
+                    </Button>
+                ) : null}
+            </PanelHeader>
 
-            {/* Loading State */}
-            {isLoading && devs.length === 0 ? (
-                <div className="text-gray-400 text-center py-12">
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        Loading developments...
-                    </div>
-                </div>
-            ) : devs.length === 0 ? (
-                /* Empty State */
-                <div className="text-gray-400 text-center py-12">
-                    <div className="rounded-lg p-8">
-                        <h4 className="text-lg font-medium text-gray-300 mb-2">No Developments Found</h4>
-                        <p className="text-gray-500">No Developments have been made in the market.</p>
-                    </div>
-                </div>
+            {isLoading && published.length === 0 ? (
+                <SkeletonRows rows={3} />
+            ) : published.length === 0 ? (
+                <EmptyState
+                    icon={Newspaper}
+                    label="Nothing on the wire"
+                    description="No developments have been published to the market yet. Published news appears here as it breaks."
+                />
             ) : (
-                /* Responsive Grid */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {devs.filter(dev => dev.posted === true).map((dev) => (
-                        <Link
-                            key={dev._id}
-                            to={`/user/developments/${dev._id}`}
-                            className=" backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 cursor-pointer group block"
-                        >
-                            {/* Status Badge */}
-                            {dev.posted !== undefined && (
-                                <div className="flex justify-end mb-3">
-                                    <span
-                                        className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30"
-                                    >
-                                        Published
+                <ul>
+                    {published.map((dev) => (
+                        <li key={dev._id}>
+                            <Link
+                                to={`/user/developments/${dev._id}`}
+                                className="group flex flex-col gap-1 border-b border-phosphor/15 px-4 py-3.5 transition-colors hover:bg-phosphor/5 sm:flex-row sm:gap-4"
+                            >
+                                <span className="shrink-0 font-term text-[11px] uppercase tracking-label text-signal-cyanDim sm:w-40 sm:pt-0.5">
+                                    {dateTime(dev.createdAt ?? dev.updatedAt)}
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block font-term text-sm text-phosphor-bright transition-colors group-hover:text-phosphor">
+                                        {dev.title || "Untitled development"}
                                     </span>
-                                </div>
-                            )}
-
-                            {/* Title */}
-                            <h4 className="text-lg font-semibold text-white mb-3 group-hover:text-green-400 transition-colors line-clamp-2">
-                                {dev.title || "Untitled Development"}
-                            </h4>
-
-                            {/* Content Preview */}
-                            <p className="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-4">
-                                {truncateContent(dev.content)}
-                            </p>
-
-                            {/* Footer */}
-                            <div className="flex justify-between items-center pt-3 border-t border-gray-700/50">
-                                {/* Date */}
-                                <span className="text-xs text-gray-500">
-                                    {formatDate(dev.createdAt) || formatDate(dev.updatedAt) || "No date"}
+                                    {dev.content ? (
+                                        <span className="mt-1 block font-term text-xs leading-relaxed text-phosphor-mid">
+                                            {lede(dev.content)}
+                                        </span>
+                                    ) : null}
                                 </span>
-
-                                {/* Word Count Indicator */}
-                                <span className="text-xs text-gray-500">
-                                    {dev.content ? `${dev.content.split(' ').length} words` : "No content"}
-                                </span>
-                            </div>
-                        </Link>
+                            </Link>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
-        </div>
+        </Panel>
     );
 };
 
-export default DevTable;
+export default UserDevTable;

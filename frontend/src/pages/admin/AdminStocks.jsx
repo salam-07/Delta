@@ -1,171 +1,127 @@
 import { useState } from "react";
-import { DollarSign, Plus, TrendingUp } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
-import StockTable from "../../components/admin/AdminStockTable";
+import AdminStockTable from "../../components/admin/AdminStockTable";
 import AdminLayout from "../../layouts/AdminLayout";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { TextField } from "../../components/ui/Field";
 
+const EMPTY = { ticker: "", name: "", price: "" };
+
+/**
+ * Stock management: list a new company, and adjust or delist an existing one.
+ *
+ * The new-listing form is disclosed by a labelled button. It used to be an
+ * icon-only `<Plus>` with no accessible name, above a form whose only heading
+ * was a green `TrendingUp` glyph with no text beside it.
+ */
 const AdminStocks = () => {
-    const {
-        createStock,
-        creatingStock,
-    } = useAdminStore();
+    const { createStock, creatingStock } = useAdminStore();
 
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [formData, setFormData] = useState({
-        ticker: "",
-        name: "",
-        price: ""
-    });
+    const [showForm, setShowForm] = useState(false);
+    const [form, setForm] = useState(EMPTY);
 
-    const handleInputChange = (e) => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.ticker || !formData.name || !formData.price) {
-            return;
-        }
 
-        await createStock({
-            ticker: formData.ticker.toUpperCase(),
-            name: formData.name,
-            price: parseFloat(formData.price)
+        const price = parseFloat(form.price);
+        if (!form.ticker.trim() || !form.name.trim() || !Number.isFinite(price) || price <= 0) return;
+
+        const created = await createStock({
+            ticker: form.ticker.trim().toUpperCase(),
+            name: form.name.trim(),
+            price,
         });
 
-        // Reset form
-        setFormData({ ticker: "", name: "", price: "" });
-        setShowCreateForm(false);
+        // The form stays filled on failure so the entry is not lost to a
+        // duplicate ticker or a dropped connection.
+        if (created) {
+            setForm(EMPTY);
+            setShowForm(false);
+        }
     };
 
-    const resetForm = () => {
-        setFormData({ ticker: "", name: "", price: "" });
-        setShowCreateForm(false);
+    const close = () => {
+        setForm(EMPTY);
+        setShowForm(false);
     };
 
     return (
-        <AdminLayout title="Stock Management">
+        <AdminLayout
+            title="Stocks"
+            actions={
+                <Button variant={showForm ? "ghost" : "primary"} size="sm" onClick={() => (showForm ? close() : setShowForm(true))}>
+                    {showForm ? (
+                        <X className="size-3 shrink-0" aria-hidden="true" />
+                    ) : (
+                        <Plus className="size-3 shrink-0" aria-hidden="true" />
+                    )}
+                    {showForm ? "Cancel" : "List a stock"}
+                </Button>
+            }
+        >
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Stock Management</h2>
-                        <p className="text-gray-400 mt-1">Create and manage stocks in the system</p>
-                    </div>
-                    <button
-                        onClick={() => setShowCreateForm(!showCreateForm)}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                        <Plus size={20} />
-                    </button>
-                </div>
-
-                {/* Create Stock Form */}
-                {showCreateForm && (
-                    <div className="p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <TrendingUp className="text-green-500" size={24} />
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Ticker Symbol */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Ticker Symbol
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="ticker"
-                                        value={formData.ticker}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., AAPL"
-                                        className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none uppercase"
-                                        maxLength={6}
-                                        required
-                                    />
-                                </div>
-
-                                {/* Company Name */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Company Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., Apple Inc."
-                                        className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Initial Price */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Initial Price ($)
-                                    </label>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-                                        <input
-                                            type="number"
-                                            name="price"
-                                            value={formData.price}
-                                            onChange={handleInputChange}
-                                            placeholder="0.00"
-                                            step="0.01"
-                                            min="0.01"
-                                            className="w-full bg-black border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                {showForm ? (
+                    <Panel ticks>
+                        <PanelHeader label="New listing" />
+                        <form onSubmit={handleSubmit} className="space-y-5 px-4 py-5">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <TextField
+                                    label="Ticker"
+                                    name="ticker"
+                                    value={form.ticker}
+                                    onChange={handleChange}
+                                    placeholder="AAPL"
+                                    maxLength={6}
+                                    autoComplete="off"
+                                    spellCheck="false"
+                                    className="uppercase"
+                                    hint="Up to 6 characters, uppercased."
+                                    required
+                                />
+                                <TextField
+                                    label="Company name"
+                                    name="name"
+                                    value={form.name}
+                                    onChange={handleChange}
+                                    placeholder="Apple Inc."
+                                    autoComplete="off"
+                                    required
+                                />
+                                <TextField
+                                    label="Opening price"
+                                    name="price"
+                                    type="number"
+                                    value={form.price}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                    min="0.01"
+                                    prefix="$"
+                                    hint="Sets both the listing price and the day's open."
+                                    required
+                                />
                             </div>
 
-                            {/* Form Actions */}
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={creatingStock}
-                                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition-colors"
-                                >
-                                    {creatingStock ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus size={18} />
-                                            Create Stock
-                                        </>
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={resetForm}
-                                    className="border border-gray-300 text-white px-6 py-2 rounded-lg transition-colors"
-                                >
+                            <div className="flex flex-wrap items-center gap-3 border-t border-phosphor/15 pt-4">
+                                <Button type="submit" variant="primary" loading={creatingStock}>
+                                    List stock
+                                </Button>
+                                <Button variant="ghost" onClick={close}>
                                     Cancel
-                                </button>
+                                </Button>
                             </div>
                         </form>
-                    </div>
-                )}
+                    </Panel>
+                ) : null}
 
-                {/* Existing Stocks Section */}
-                <StockTable
-                    showActions={true}
-                    showDeleteColumn={true}
-                    showRefreshButton={true}
-                    title="Existing Stocks"
-                />
+                <AdminStockTable title="Listings" />
             </div>
         </AdminLayout>
     );

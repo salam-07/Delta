@@ -1,128 +1,99 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useMarketStore } from "../../store/useMarketStore";
 import UserLayout from "../../layouts/UserLayout";
+import { Panel } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { ErrorPanel, LoadingPanel } from "../../components/ui/Feedback";
+import { dateTime } from "../../lib/format";
 
+/**
+ * A single development, read in full.
+ *
+ * Read-only: the publish state is stated as a fact, not offered as a control.
+ * The badge here used to carry `cursor-pointer` and a hover lift with no
+ * handler behind it, promising participants an action they do not have.
+ */
 const UserDevelopmentView = () => {
     const { devId } = useParams();
-    const navigate = useNavigate();
-
     const { fetchDev, dev, isDevLoading } = useMarketStore();
 
     useEffect(() => {
-        if (devId) {
-            fetchDev(devId);
-        }
+        if (devId) fetchDev(devId);
     }, [devId, fetchDev]);
 
-
-    const formatDate = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    const backToWire = (
+        <Button as={Link} to="/user/developments" size="sm" variant="ghost">
+            <ArrowLeft className="size-3 shrink-0" aria-hidden="true" />
+            The wire
+        </Button>
+    );
 
     if (isDevLoading) {
         return (
-            <UserLayout title="Loading Development...">
-                <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-gray-400">
-                        <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        <span>Loading development...</span>
-                    </div>
-                </div>
+            <UserLayout title="Development" actions={backToWire}>
+                <Panel>
+                    <LoadingPanel label="Loading development" />
+                </Panel>
             </UserLayout>
         );
     }
 
     if (!dev) {
         return (
-            <UserLayout title="Development Not Found">
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="text-center">
-                        <h3 className="text-xl font-semibold text-white mb-2">Development Not Found</h3>
-                        <p className="text-gray-400 mb-6">The development you're looking for doesn't exist or may have been deleted.</p>
-                        <button
-                            onClick={() => navigate('/admin/developments')}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                        >
-                            <ArrowLeft size={16} />
-                            Back to Developments
-                        </button>
-                    </div>
-                </div>
+            <UserLayout title="Development" actions={backToWire}>
+                <Panel>
+                    <ErrorPanel
+                        label="Development not found"
+                        description="This development does not exist, has not been published, or has been withdrawn."
+                        action={
+                            <Button as={Link} to="/user/developments" variant="primary">
+                                Back to the wire
+                            </Button>
+                        }
+                    />
+                </Panel>
             </UserLayout>
         );
     }
 
     return (
-        <UserLayout title={`Development: ${dev.title || 'Untitled'}`}>
-            <div className="max-w-4xl mx-auto p-6 space-y-6">
-                {/* Header with Back Button */}
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/user/developments')}
-                        className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                    >
-                        <ArrowLeft size={16} />
-                        Back to Developments
-                    </button>
-                </div>
+        <UserLayout title="Development" actions={backToWire}>
+            <article className="mx-auto max-w-3xl space-y-6">
+                <Panel ticks>
+                    <header className="border-b border-phosphor/20 px-5 py-5">
+                        <p className="font-term text-[11px] uppercase tracking-label text-signal-cyanDim">
+                            {dateTime(dev.createdAt)}
+                        </p>
+                        <h2 className="mt-2 font-board text-2xl leading-tight tracking-cell text-phosphor-bright sm:text-3xl">
+                            {dev.title || "Untitled development"}
+                        </h2>
+                    </header>
 
-                {/* Status Toggle */}
-                <div className="flex justify-between items-center p-4">
-                    <div className="flex items-center gap-3">
-                        <span className="text-gray-300 font-medium">Status:</span>
-                        <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200 ${dev.posted
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                }`}                        >
-                            {dev.posted ? 'Published' : 'Draft'}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Development Content */}
-                <div className="space-y-6">
-                    {/* Title */}
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            {dev.title || "Untitled Development"}
-                        </h1>
-
-                        {/* Metadata */}
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                            {dev.updatedAt && dev.updatedAt !== dev.createdAt && (
-                                <span>Sent At: {formatDate(dev.updatedAt)}</span>
-                            )}
-                            {dev.content && (
-                                <span>Words: {dev.content.split(' ').length}</span>
-                            )}
+                    {dev.content ? (
+                        <div className="whitespace-pre-wrap px-5 py-6 font-term text-sm leading-relaxed text-phosphor-bright">
+                            {dev.content}
                         </div>
-                    </div>
+                    ) : (
+                        <p className="px-5 py-6 font-term text-sm text-phosphor-mid">
+                            This development was published without a body.
+                        </p>
+                    )}
 
-                    {/* Content */}
-                    <div className="backdrop-blur-sm rounded-lg p-6">
-                        {dev.content ? (
-                            <div className="prose prose-invert max-w-none">
-                                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                                    {dev.content}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-gray-500">
-                                <p className="text-lg">No content available</p>
-                                <p className="text-sm mt-2">This development doesn't have any content yet.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+                    {dev.updatedAt && dev.updatedAt !== dev.createdAt ? (
+                        <footer className="border-t border-phosphor/20 bg-ink-raised px-5 py-2.5">
+                            <p className="font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                Revised {dateTime(dev.updatedAt)}
+                            </p>
+                        </footer>
+                    ) : null}
+                </Panel>
+
+                <p className="font-term text-[11px] leading-relaxed text-phosphor-mid">
+                    Developments can move prices. Check the market board for the current quote before you trade on this.
+                </p>
+            </article>
         </UserLayout>
     );
 };

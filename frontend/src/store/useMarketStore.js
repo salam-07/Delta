@@ -2,30 +2,6 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 
-
-fetchStockHistory: async (stockId) => {
-    set({ isHistoryLoading: true });
-    try {
-        const res = await axiosInstance.get(`/market/history/${stockId}`);
-        set({ history: res.data });
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to fetch stock history");
-        console.error("Error fetching stock history:", error);
-    } finally {
-        set({ isHistoryLoading: false });
-    }
-};
-
-fetchStockCompanyInfo: async (stockId) => {
-    try {
-        const res = await axiosInstance.get(`/market/company-info/${stockId}`);
-        return res.data;
-    } catch (error) {
-        console.error("Error fetching company info:", error);
-        return { companyInfo: "" };
-    }
-};
-
 export const useMarketStore = create((set, get) => ({
     marketOpen: false,
     isMarketStatusLoading: false,
@@ -42,6 +18,7 @@ export const useMarketStore = create((set, get) => ({
 
     history: [],
     isHistoryLoading: false,
+    historyError: null,
 
     // Helper methods for Socket.IO updates
     updateStocks: (updatedStocks) => {
@@ -115,13 +92,18 @@ export const useMarketStore = create((set, get) => ({
         }
     },
 
+    // The chart states this failure inline, with a retry, so there is no toast:
+    // a toast that vanishes leaves an empty chart with no explanation behind it.
     fetchStockHistory: async (stockId) => {
-        set({ isHistoryLoading: true });
+        set({ isHistoryLoading: true, historyError: null });
         try {
             const res = await axiosInstance.get(`/market/history/${stockId}`);
             set({ history: res.data });
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to fetch stock history");
+            set({
+                history: [],
+                historyError: error.response?.data?.message || "Could not load price history.",
+            });
             console.error("Error fetching history:", error);
         } finally {
             set({ isHistoryLoading: false });
@@ -157,6 +139,41 @@ export const useMarketStore = create((set, get) => ({
             const res = await axiosInstance.get(`/market/viewdev/${devId}`);
             set({ dev: res.data });
         } catch (error) {
+            set({ dev: null });
+            toast.error(error.response?.data?.message || "Failed to fetch development");
+            console.error("Error fetching development:", error);
+        } finally {
+            set({ isDevLoading: false });
+        }
+    },
+
+    /**
+     * The admin variants of the two reads above.
+     * `/market/viewdevs` and `/market/viewdev/:id` are filtered to published
+     * developments — a draft carries the price changes it will trigger, so it is
+     * market-moving news participants must not read early. The admin portal
+     * needs drafts, so it reads from the admin routes instead.
+     */
+    fetchAllDevsAsAdmin: async () => {
+        set({ isDevsLoading: true });
+        try {
+            const res = await axiosInstance.get("/admin/devs");
+            set({ devs: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch developments");
+            console.error("Error fetching developments:", error);
+        } finally {
+            set({ isDevsLoading: false });
+        }
+    },
+
+    fetchDevAsAdmin: async (devId) => {
+        set({ isDevLoading: true });
+        try {
+            const res = await axiosInstance.get(`/admin/dev/${devId}`);
+            set({ dev: res.data });
+        } catch (error) {
+            set({ dev: null });
             toast.error(error.response?.data?.message || "Failed to fetch development");
             console.error("Error fetching development:", error);
         } finally {

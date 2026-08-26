@@ -1,191 +1,224 @@
-import { useEffect, useState } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { RefreshCw, Receipt } from 'lucide-react';
 import UserLayout from '../../layouts/UserLayout';
 import { useTradeStore } from '../../store/useTradeStore';
+import { Panel, PanelHeader } from '../../components/ui/Panel';
+import { Button } from '../../components/ui/Button';
+import { Readout, ReadoutStrip } from '../../components/ui/Readout';
+import { EmptyState, SkeletonRows, SkeletonValue, StatusPill } from '../../components/ui/Feedback';
+import { count, dateTime, money } from '../../lib/format';
 
+const PAGE = 20;
+
+/**
+ * The participant's own ledger: every order they have filled, newest first.
+ *
+ * A ledger is read as rows, so the page is rows — the activity figures sit in
+ * one ruled strip above them instead of a hero count and four cards repeating
+ * the same series.
+ */
 const UserHistory = () => {
     const { tradeHistory, isLoadingHistory, viewHistory } = useTradeStore();
-    const [visibleTrades, setVisibleTrades] = useState(20); // For lazy loading
+    const [visible, setVisible] = useState(PAGE);
 
     useEffect(() => {
         viewHistory();
     }, [viewHistory]);
 
-    // Format trade data for display
-    const formatTradeText = (trade) => {
-        const stockTicker = trade.stockId?.ticker || trade.ticker || 'Unknown Stock';
-        const tradeType = trade.type?.toLowerCase() === 'buy' ? 'Bought' : 'Sold';
-        const amount = trade.amount || 0;
-        const price = trade.tradePrice || 0;
+    const summary = useMemo(() => {
+        const volume = tradeHistory.reduce(
+            (sum, trade) => sum + (Number(trade.total) || Number(trade.tradePrice) * Number(trade.amount) || 0),
+            0
+        );
+        return {
+            buys: tradeHistory.filter((t) => t.type?.toLowerCase() === 'buy').length,
+            sells: tradeHistory.filter((t) => t.type?.toLowerCase() === 'sell').length,
+            volume,
+            average: tradeHistory.length > 0 ? volume / tradeHistory.length : 0,
+        };
+    }, [tradeHistory]);
 
-        return `${tradeType} ${amount} shares of ${stockTicker} at $${price.toFixed(2)}`;
+    const row = (trade) => {
+        const isBuy = trade.type?.toLowerCase() === 'buy';
+        return {
+            isBuy,
+            side: isBuy ? 'Buy' : 'Sell',
+            ticker: trade.stockId?.ticker || trade.ticker || '—',
+            name: trade.stockId?.name || null,
+            shares: Number(trade.amount) || 0,
+            price: Number(trade.tradePrice) || 0,
+            value: Number(trade.total) || Number(trade.tradePrice) * Number(trade.amount) || 0,
+            at: dateTime(trade.createdAt),
+        };
     };
 
-    // Load more trades (lazy loading)
-    const loadMoreTrades = () => {
-        setVisibleTrades(prev => prev + 20);
-    };
+    const refresh = (
+        <Button size="sm" variant="ghost" onClick={viewHistory} disabled={isLoadingHistory}>
+            <RefreshCw className={`size-3 shrink-0 ${isLoadingHistory ? 'animate-spin' : ''}`} aria-hidden="true" />
+            Refresh
+        </Button>
+    );
 
-    // Format date for display
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    const remaining = tradeHistory.length - visible;
 
     return (
-        <UserLayout title="My Trade History">
+        <UserLayout title="History" actions={refresh}>
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white">My Trade History</h1>
-                        <p className="text-white/60 mt-1">Your complete trading activity</p>
-                    </div>
+                <Panel ticks>
+                    <PanelHeader label="Activity" />
+                    <ReadoutStrip cols={4}>
+                        <Readout
+                            label="Orders filled"
+                            value={isLoadingHistory ? <SkeletonValue className="w-16" /> : count(tradeHistory.length)}
+                            tone="accent"
+                        />
+                        <Readout
+                            label="Buys"
+                            value={isLoadingHistory ? <SkeletonValue className="w-12" /> : count(summary.buys)}
+                            tone={summary.buys > 0 ? 'up' : 'muted'}
+                        />
+                        <Readout
+                            label="Sells"
+                            value={isLoadingHistory ? <SkeletonValue className="w-12" /> : count(summary.sells)}
+                            tone={summary.sells > 0 ? 'down' : 'muted'}
+                        />
+                        <Readout
+                            label="Volume traded"
+                            value={isLoadingHistory ? <SkeletonValue className="w-24" /> : money(summary.volume)}
+                            note={`${money(summary.average)} average order`}
+                        />
+                    </ReadoutStrip>
+                </Panel>
 
-                    <button
-                        onClick={viewHistory}
-                        disabled={isLoadingHistory}
-                        className="flex items-center gap-2 bg-green-500/20 text-green-400 border border-green-500/30 px-4 py-2 rounded-lg hover:bg-green-500/30 transition-all duration-200"
-                    >
-                        <RefreshCw size={16} className={isLoadingHistory ? "animate-spin" : ""} />
-                        Refresh
-                    </button>
-                </div>
+                <Panel>
+                    <PanelHeader label="Ledger">
+                        {tradeHistory.length > 0 ? (
+                            <span className="font-term text-[11px] text-phosphor-mid">
+                                Showing {count(Math.min(visible, tradeHistory.length))} of {count(tradeHistory.length)}
+                            </span>
+                        ) : null}
+                    </PanelHeader>
 
-                {/* Total Trades Counter */}
-                <div className="text-center py-8">
-                    <div className="text-8xl font-bold text-green-400 mb-4">
-                        {isLoadingHistory ? (
-                            <div className="w-32 h-24 bg-black/20 animate-pulse rounded-lg mx-auto"></div>
-                        ) : (
-                            tradeHistory.length.toLocaleString()
-                        )}
-                    </div>
-                    <p className="text-xl text-white/60">
-                        Your Total Trades
-                    </p>
-                </div>
-
-                {/* Trade History List */}
-                <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 rounded-lg overflow-hidden">
                     {isLoadingHistory && tradeHistory.length === 0 ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                            <span className="ml-3 text-white/60">Loading your trade history...</span>
-                        </div>
+                        <SkeletonRows rows={6} />
                     ) : tradeHistory.length === 0 ? (
-                        <div className="text-center py-12">
-                            <TrendingUp className="w-16 h-16 text-white/20 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-white mb-2">No Trades Yet</h3>
-                            <p className="text-white/60">Your trading history will appear here once you make your first trade</p>
-                        </div>
+                        <EmptyState
+                            icon={Receipt}
+                            label="No orders filled"
+                            description="Your ledger records every buy and sell you place. It starts once you fill your first order."
+                            action={
+                                <Button as={Link} to="/user/trade" variant="primary">
+                                    Place an order
+                                </Button>
+                            }
+                        />
                     ) : (
                         <>
-                            {/* Trade List */}
-                            <div className="p-6 space-y-4">
-                                {tradeHistory.slice(0, visibleTrades).map((trade, index) => (
-                                    <div
-                                        key={trade._id || index}
-                                        className="flex items-center justify-between p-4 bg-black/10 rounded-lg border border-green-500/5"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            {/* Trade Type Icon */}
-                                            <div className={`p-2 rounded-full ${trade.type?.toLowerCase() === 'buy'
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : 'bg-white/20 text-white/60'
-                                                }`}>
-                                                {trade.type?.toLowerCase() === 'buy' ? (
-                                                    <TrendingUp size={20} />
-                                                ) : (
-                                                    <TrendingDown size={20} />
-                                                )}
-                                            </div>
-
-                                            {/* Trade Details */}
-                                            <div>
-                                                <p className="text-white font-medium text-lg">
-                                                    {formatTradeText(trade)}
-                                                </p>
-                                                <p className="text-white/60 text-sm">
-                                                    Total Value: ${((trade.tradePrice || 0) * (trade.amount || 0)).toFixed(2)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Date */}
-                                        <div className="text-right">
-                                            <p className="text-white/60 text-sm">
-                                                {formatDate(trade.createdAt || trade.date)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
+                            {/* Table — sm and up */}
+                            <div className="hidden sm:block">
+                                <table className="w-full">
+                                    <caption className="sr-only">Your filled orders, newest first</caption>
+                                    <thead>
+                                        <tr className="border-b border-phosphor/20 bg-ink-raised">
+                                            <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Time
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Side
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Stock
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Shares
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Price
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Value
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {tradeHistory.slice(0, visible).map((trade, index) => {
+                                            const r = row(trade);
+                                            return (
+                                                <tr key={trade._id || index} className="data-row">
+                                                    <td className="whitespace-nowrap px-4 py-3 font-term text-xs text-signal-cyanDim">
+                                                        {r.at}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <StatusPill tone={r.isBuy ? 'live' : 'halted'}>{r.side}</StatusPill>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className="font-term text-sm text-phosphor-bright">{r.ticker}</span>
+                                                        {r.name ? (
+                                                            <span className="mt-0.5 block max-w-[14rem] truncate font-term text-xs text-phosphor-mid">
+                                                                {r.name}
+                                                            </span>
+                                                        ) : null}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                        {count(r.shares)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-mid">
+                                                        {money(r.price)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                        {money(r.value)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
 
-                            {/* Load More Button */}
-                            {visibleTrades < tradeHistory.length && (
-                                <div className="border-t border-green-500/20 p-6 text-center">
-                                    <button
-                                        onClick={loadMoreTrades}
-                                        className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 px-6 py-3 rounded-lg transition-all duration-200"
-                                    >
-                                        Load More Trades ({tradeHistory.length - visibleTrades} remaining)
-                                    </button>
+                            {/* Stacked rows — below sm */}
+                            <ul className="sm:hidden">
+                                {tradeHistory.slice(0, visible).map((trade, index) => {
+                                    const r = row(trade);
+                                    return (
+                                        <li
+                                            key={trade._id || index}
+                                            className="border-b border-phosphor/15 px-4 py-3.5 last:border-b-0"
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    <StatusPill tone={r.isBuy ? 'live' : 'halted'}>{r.side}</StatusPill>
+                                                    <span className="truncate font-term text-sm text-phosphor-bright">
+                                                        {r.ticker}
+                                                    </span>
+                                                </div>
+                                                <span className="shrink-0 font-term text-sm text-phosphor-bright">
+                                                    {money(r.value)}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                                                <span className="font-term text-xs text-phosphor-mid">
+                                                    {count(r.shares)} @ {money(r.price)}
+                                                </span>
+                                                <span className="shrink-0 font-term text-[11px] text-signal-cyanDim">
+                                                    {r.at}
+                                                </span>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+
+                            {remaining > 0 ? (
+                                <div className="border-t border-phosphor/25 bg-ink-raised px-4 py-3 text-center">
+                                    <Button onClick={() => setVisible((n) => n + PAGE)}>
+                                        Show {count(Math.min(PAGE, remaining))} more
+                                    </Button>
                                 </div>
-                            )}
+                            ) : null}
                         </>
                     )}
-                </div>
-
-                {/* Summary Stats */}
-                {!isLoadingHistory && tradeHistory.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 rounded-lg p-6">
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrendingUp className="text-green-400" size={20} />
-                                <span className="text-sm font-medium text-white/70">Buy Orders</span>
-                            </div>
-                            <div className="text-2xl font-bold text-green-400">
-                                {tradeHistory.filter(t => t.type?.toLowerCase() === 'buy').length}
-                            </div>
-                        </div>
-
-                        <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 rounded-lg p-6">
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrendingDown className="text-white/60" size={20} />
-                                <span className="text-sm font-medium text-white/70">Sell Orders</span>
-                            </div>
-                            <div className="text-2xl font-bold text-white">
-                                {tradeHistory.filter(t => t.type?.toLowerCase() === 'sell').length}
-                            </div>
-                        </div>
-
-                        <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 rounded-lg p-6">
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrendingUp className="text-green-400" size={20} />
-                                <span className="text-sm font-medium text-white/70">Total Volume</span>
-                            </div>
-                            <div className="text-2xl font-bold text-green-400">
-                                ${tradeHistory.reduce((sum, trade) => sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                        </div>
-
-                        <div className="bg-black/10 backdrop-blur-sm border border-green-500/10 rounded-lg p-6">
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrendingUp className="text-green-400" size={20} />
-                                <span className="text-sm font-medium text-white/70">Avg. Trade Size</span>
-                            </div>
-                            <div className="text-2xl font-bold text-white">
-                                ${tradeHistory.length > 0 ? (tradeHistory.reduce((sum, trade) => sum + ((trade.tradePrice || 0) * (trade.amount || 0)), 0) / tradeHistory.length).toFixed(2) : '0.00'}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                </Panel>
             </div>
         </UserLayout>
     );

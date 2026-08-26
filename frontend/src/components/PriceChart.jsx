@@ -1,74 +1,90 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMemo } from 'react';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { ChartLine } from 'lucide-react';
 import { useMarketStore } from '../store/useMarketStore';
+import { EmptyState, ErrorPanel, LoadingPanel } from './ui/Feedback';
+import { Button } from './ui/Button';
+import { clockTime, dateTime, money } from '../lib/format';
 
-const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) => {
-    const [chartData, setChartData] = useState([]);
-    const [error, setError] = useState(null);
-    const { fetchStockHistory, history, isHistoryLoading } = useMarketStore();
+/**
+ * A stock's price record over the session.
+ *
+ * Recharts draws with SVG attributes, not classes, so the palette has to be
+ * handed to it as literals. These are the same values `tailwind.config.js`
+ * defines — signal.up / signal.down for direction, phosphor for structure —
+ * and they are declared once here rather than sprinkled through the chart.
+ */
+const PLOT = {
+    up: '#5BFF8F',      // signal.up
+    down: '#FF4136',    // signal.down
+    flat: '#31D96A',    // phosphor
+    rule: '#1C5C38',    // phosphor.dim — grid only, never text
+    axis: '#4FAE79',    // phosphor.mid — 7.25:1 on ink
+    ink: '#050A07',
+};
 
-    useEffect(() => {
-        if (!stockId) return;
-        setError(null);
-        console.log('PriceChart: Fetching history for stockId:', stockId);
-        fetchStockHistory(stockId);
-    }, [stockId, fetchStockHistory]);
+/** A ruled readout, not a rounded bubble: the same panel language as the app. */
+const PlotTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const point = payload[0].payload;
+    return (
+        <div className="border border-phosphor/40 bg-ink-panel px-3 py-2">
+            <div className="font-term text-sm text-phosphor-bright">{money(point.price)}</div>
+            <div className="mt-0.5 font-term text-[10px] uppercase tracking-label text-signal-cyanDim">
+                {point.recordedAt}
+            </div>
+        </div>
+    );
+};
 
-    // Transform history data when it changes
-    useEffect(() => {
-        console.log('PriceChart: History data changed:', history);
-        if (history && history.length > 0) {
-            console.log('PriceChart: Formatting history data, length:', history.length);
-            const formattedData = history.map((item, index) => ({
-                time: new Date(item.createdAt).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                }),
+const PriceChart = ({ stockId, height = 400, showGrid = true, className = '' }) => {
+    const { fetchStockHistory, history, isHistoryLoading, historyError } = useMarketStore();
+
+    // The parent owns the fetch — this component had its own effect calling
+    // `fetchStockHistory(stockId)` on mount, which duplicated every caller's
+    // fetch and fired a second request for the same series on every selection.
+    const chartData = useMemo(
+        () =>
+            (history ?? []).map((item) => ({
+                time: clockTime(item.createdAt).slice(0, 5),
                 price: parseFloat(item.price),
-                fullDate: new Date(item.createdAt).toLocaleString(),
-                index: index
-            }));
-            console.log('PriceChart: Formatted data:', formattedData);
-            setChartData(formattedData);
-        } else {
-            console.log('PriceChart: No history data or empty array');
-            setChartData([]);
-        }
-    }, [history]);
+                recordedAt: dateTime(item.createdAt),
+            })),
+        [history]
+    );
 
+    // Direction over the whole series, matching the board's up/down semantics.
+    const stroke = useMemo(() => {
+        if (chartData.length < 2) return PLOT.flat;
+        const first = chartData[0]?.price;
+        const last = chartData[chartData.length - 1]?.price;
+        if (last > first) return PLOT.up;
+        if (last < first) return PLOT.down;
+        return PLOT.flat;
+    }, [chartData]);
 
-    // Determine line color based on price trend
-    const getLineColor = () => {
-        if (chartData.length < 2) return '#10b981'; // Default green
-        const firstPrice = chartData[0]?.price;
-        const lastPrice = chartData[chartData.length - 1]?.price;
-        return lastPrice >= firstPrice ? '#10b981' : '#ef4444'; // Green if up, red if down
-    };
-
-    if (isHistoryLoading) {
+    if (isHistoryLoading && chartData.length === 0) {
         return (
             <div className={`flex items-center justify-center ${className}`} style={{ height }}>
-                <div className="flex items-center space-x-2 text-gray-400">
-                    <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Loading price history...</span>
-                </div>
+                <LoadingPanel label="Loading price history" />
             </div>
         );
     }
 
-    if (error) {
+    if (historyError) {
         return (
             <div className={`flex items-center justify-center ${className}`} style={{ height }}>
-                <div className="text-center text-gray-400">
-                    <p className="text-red-400 mb-2">{error}</p>
-                    <button
-                        onClick={() => stockId && fetchStockHistory(stockId)}
-                        className="text-green-400 hover:text-green-300 underline text-sm"
-                    >
-                        Try again
-                    </button>
-                </div>
+                <ErrorPanel
+                    label="Price history unavailable"
+                    description={historyError}
+                    action={
+                        stockId ? (
+                            <Button size="sm" onClick={() => fetchStockHistory(stockId)}>
+                                Try again
+                            </Button>
+                        ) : null
+                    }
+                />
             </div>
         );
     }
@@ -76,64 +92,54 @@ const PriceChart = ({ stockId, height = 400, showGrid = true, className = "" }) 
     if (chartData.length === 0) {
         return (
             <div className={`flex items-center justify-center ${className}`} style={{ height }}>
-                <div className="text-center text-gray-500">
-                    <p>No price history available</p>
-                </div>
+                <EmptyState
+                    icon={ChartLine}
+                    label="No price history"
+                    description="This stock has not recorded a price change yet. Its record starts building once the market opens."
+                />
             </div>
         );
     }
 
+    // Point markers help read a sparse series and only clutter a dense one.
+    const showDots = chartData.length <= 40;
+
     return (
         <div className={`w-full ${className}`} style={{ height }}>
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                    data={chartData}
-                    margin={{
-                        top: 20,
-                        right: 20,
-                        left: 20,
-                        bottom: 20,
-                    }}
-                >
+                <LineChart data={chartData} margin={{ top: 12, right: 12, left: 4, bottom: 4 }}>
                     {showGrid && (
-                        <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#374151"
-                            opacity={0.1}
-                        />
+                        <CartesianGrid stroke={PLOT.rule} strokeDasharray="2 4" vertical={false} />
                     )}
                     <XAxis
                         dataKey="time"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '', fontSize: 1 }}
+                        tick={{ fill: PLOT.axis, fontSize: 10, fontFamily: 'Commit Mono, monospace' }}
+                        minTickGap={40}
                         interval="preserveStartEnd"
                     />
                     <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        tick={{ fill: PLOT.axis, fontSize: 10, fontFamily: 'Commit Mono, monospace' }}
                         domain={['dataMin - 1', 'dataMax + 1']}
-                        tickFormatter={(value) => `$${value.toFixed(2)}`}
+                        tickFormatter={(value) => money(value)}
+                        width={72}
+                    />
+                    <Tooltip
+                        content={<PlotTooltip />}
+                        cursor={{ stroke: PLOT.axis, strokeDasharray: '2 3' }}
                     />
                     <Line
                         type="linear"
                         dataKey="price"
-                        stroke={getLineColor()}
-                        strokeWidth={3}
-                        dot={{
-                            fill: getLineColor(),
-                            strokeWidth: 1,
-                            stroke: '#000000',
-                            r: 3
-                        }}
-                        activeDot={{
-                            r: 3,
-                            fill: getLineColor(),
-                            stroke: '#000000',
-                            strokeWidth: 1
-                        }}
-                        filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
+                        name="Price"
+                        stroke={stroke}
+                        strokeWidth={2}
+                        dot={showDots ? { fill: stroke, stroke: PLOT.ink, strokeWidth: 1, r: 2.5 } : false}
+                        activeDot={{ fill: stroke, stroke: PLOT.ink, strokeWidth: 1, r: 4 }}
+                        isAnimationActive={false}
                     />
                 </LineChart>
             </ResponsiveContainer>

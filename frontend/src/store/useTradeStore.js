@@ -4,7 +4,14 @@ import { axiosInstance } from "../lib/axios.js";
 import { useMarketStore } from "./useMarketStore.js";
 import { playTradeSuccessSound } from "../lib/audio.js";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+/**
+ * Every participant is credited this much cash at signup, so it is the basis
+ * for profit and loss. Mirrors the `balance` default in
+ * `backend/src/models/user.model.js` — `getProfitLoss` and
+ * `getProfitLossPercentage` previously used 3000 and 1000 for the same figure,
+ * which reported every return at three times its real value.
+ */
+const STARTING_CASH = 3000;
 
 export const useTradeStore = create((set, get) => ({
     // State
@@ -192,21 +199,9 @@ export const useTradeStore = create((set, get) => ({
         return balance + portfolioValue;
     },
 
-    getProfitLoss: () => {
-        const INITIAL_CASH = 3000; // Hardcoded initial cash amount
-        const currentTotalAssets = get().getTotalAssets();
+    getProfitLoss: () => get().getTotalAssets() - STARTING_CASH,
 
-        // Simple P&L: current total assets minus initial cash
-        return currentTotalAssets - INITIAL_CASH;
-    },
-
-    getProfitLossPercentage: () => {
-        const INITIAL_CASH = 1000; // Hardcoded initial cash amount
-        const profitLoss = get().getProfitLoss();
-
-        // Percentage change from initial cash
-        return (profitLoss / INITIAL_CASH) * 100;
-    },
+    getProfitLossPercentage: () => (get().getProfitLoss() / STARTING_CASH) * 100,
 
     // Reset Methods
     resetTradeStore: () => {

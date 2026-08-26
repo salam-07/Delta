@@ -1,260 +1,272 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronUp, ChevronDown, Trash2, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Landmark, RefreshCw, Trash2 } from "lucide-react";
 import { useMarketStore } from "../../store/useMarketStore";
 import { useAdminStore } from "../../store/useAdminStore";
+import { Panel, PanelHeader } from "../ui/Panel";
+import { Button } from "../ui/Button";
+import { Change } from "../ui/Readout";
+import { InlineNumberField } from "../ui/Field";
+import { EmptyState, SkeletonRows } from "../ui/Feedback";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { money, priceChange } from "../../lib/format";
 
-const StockTable = ({
+const DEFAULT_STEP = 10;
+
+/**
+ * Market control: every listing, its live price, and the controls that move it.
+ *
+ * One link per row, on the ticker. Every cell used to be wrapped in its own
+ * `<Link>` to the same stock, which put five identical links in the tab order
+ * per row and made the price controls sit inside a navigation target.
+ */
+const AdminStockTable = ({
     showActions = true,
     showDeleteColumn = true,
     showRefreshButton = true,
-    title = "Stocks"
+    title = "Listings",
 }) => {
-    const [priceAdjustments, setPriceAdjustments] = useState({});
+    const [steps, setSteps] = useState({});
+    const [pendingDelete, setPendingDelete] = useState(null);
 
-    // Get data and actions from stores
-    const {
-        stocks,
-        isStocksLoading,
-        fetchAllStocks
-    } = useMarketStore();
+    const { stocks, isStocksLoading, fetchAllStocks } = useMarketStore();
+    const { updateStock, deleteStock, updatingStockId, deletingStockId } = useAdminStore();
 
-    const {
-        updateStock,
-        deleteStock,
-        updatingStock,
-        deletingStockId
-    } = useAdminStore();
-
-    // Fetch stocks on component mount
     useEffect(() => {
         fetchAllStocks();
     }, [fetchAllStocks]);
 
-    // Simple function to calculate price change using openingPrice and current price
-    const calculatePriceChange = (stock) => {
-        const openingPrice = parseFloat(stock.openingPrice) || 0;
-        const currentPrice = parseFloat(stock.price) || 0;
-
-        const priceChange = currentPrice - openingPrice;
-        const percentageChange = openingPrice > 0 ? ((priceChange / openingPrice) * 100) : 0;
-
-        return {
-            priceChange: priceChange.toFixed(2),
-            percentageChange: percentageChange.toFixed(2),
-            isPositive: priceChange >= 0
-        };
+    const step = (stockId) => {
+        const raw = steps[stockId];
+        const parsed = parseFloat(raw);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_STEP;
     };
 
-    // Function to render price change
-    const renderPriceChange = (stock) => {
-        const { priceChange, percentageChange, isPositive } = calculatePriceChange(stock);
-        const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
-        const sign = isPositive ? '+' : '';
+    const adjust = (stock, direction) => {
+        const delta = step(stock._id) * direction;
+        const newPrice = Math.max(0.01, parseFloat(stock.price) + delta);
+        updateStock(stock._id, { newPrice });
+    };
 
+    const priceControls = (stock) => {
+        const busy = updatingStockId === stock._id;
         return (
-            <div className={`${colorClass} text-sm`}>
-                <div>{sign}${priceChange}</div>
-                <div>({sign}{percentageChange}%)</div>
+            <div className="flex items-center justify-center gap-1.5">
+                <Button
+                    size="sm"
+                    variant="buy"
+                    icon
+                    onClick={() => adjust(stock, 1)}
+                    disabled={busy}
+                    aria-label={`Raise ${stock.ticker} by ${money(step(stock._id))}`}
+                >
+                    <ChevronUp className="size-3.5" aria-hidden="true" />
+                </Button>
+                <InlineNumberField
+                    value={steps[stock._id] ?? DEFAULT_STEP}
+                    onChange={(e) => setSteps((prev) => ({ ...prev, [stock._id]: e.target.value }))}
+                    min="0.01"
+                    step="1"
+                    className="w-16"
+                    aria-label={`Price step for ${stock.ticker} in dollars`}
+                />
+                <Button
+                    size="sm"
+                    variant="sell"
+                    icon
+                    onClick={() => adjust(stock, -1)}
+                    disabled={busy}
+                    aria-label={`Lower ${stock.ticker} by ${money(step(stock._id))}`}
+                >
+                    <ChevronDown className="size-3.5" aria-hidden="true" />
+                </Button>
             </div>
         );
     };
 
-    const handleDelete = async (stockId) => {
-        if (window.confirm("Are you sure you want to delete this stock? This action cannot be undone.")) {
-            await deleteStock(stockId);
-        }
-    };
-
-    const getPriceAdjustmentValue = (stockId) => {
-        return priceAdjustments[stockId] !== undefined ? priceAdjustments[stockId] : 10;
-    };
-
-    const handlePriceAdjustmentChange = (stockId, value) => {
-        setPriceAdjustments(prev => ({
-            ...prev,
-            [stockId]: value // Keep the actual value, even if empty
-        }));
-    };
-
-    const handlePriceIncrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId) || 10; // Use default here
-        const newPrice = currentPrice + parseFloat(adjustmentValue);
-        await updateStock(stockId, { newPrice });
-    };
-
-    const handlePriceDecrease = async (ticker, currentPrice, stockId) => {
-        const adjustmentValue = getPriceAdjustmentValue(stockId) || 10; // Use default here
-        const newPrice = Math.max(0.01, currentPrice - parseFloat(adjustmentValue));
-        await updateStock(stockId, { newPrice });
-    };
+    const ticker = (stock) => (
+        <Link
+            to={`/admin/stocks/${stock._id}`}
+            className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor
+                transition-colors hover:border-phosphor hover:bg-phosphor/20"
+        >
+            {stock.ticker}
+        </Link>
+    );
 
     return (
-        <div className=" p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-white">{title}</h3>
-                {showRefreshButton && (
-                    <button
-                        onClick={fetchAllStocks}
-                        disabled={isStocksLoading}
-                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors"
-                    >
-                        <RefreshCw size={16} className={isStocksLoading ? "animate-spin" : ""} />
-                        Refresh
-                    </button>
-                )}
-            </div>
+        <>
+            <Panel ticks>
+                <PanelHeader label={title}>
+                    {showRefreshButton ? (
+                        <Button size="sm" variant="ghost" onClick={fetchAllStocks} disabled={isStocksLoading}>
+                            <RefreshCw
+                                className={`size-3 shrink-0 ${isStocksLoading ? "animate-spin" : ""}`}
+                                aria-hidden="true"
+                            />
+                            Refresh
+                        </Button>
+                    ) : null}
+                </PanelHeader>
 
-            {isStocksLoading && stocks.length === 0 ? (
-                <div className="text-gray-400 text-center py-8">
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        Loading stocks...
-                    </div>
-                </div>
-            ) : stocks.length === 0 ? (
-                <div className="text-gray-400 text-center py-8">
-                    No stocks found. Create your first stock using the form above.
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-gray-700">
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Ticker</th>
-                                {showActions && (
-                                    <th className="text-center text-gray-300 font-medium py-3 px-4">Price Actions</th>
-                                )}
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Opening Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
-                                {showDeleteColumn && (
-                                    <th className="text-left text-gray-300 font-medium py-3 px-4">Delete</th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stocks.map((stock) => (
-                                <tr key={stock._id} className="border-b border-gray-800 ">
-                                    <td className="py-4 px-4">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="block"
-                                        >
-                                            <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono hover:bg-green-600/30 transition-colors">
-                                                {stock.ticker}
+                {isStocksLoading && stocks.length === 0 ? (
+                    <SkeletonRows rows={5} />
+                ) : stocks.length === 0 ? (
+                    <EmptyState
+                        icon={Landmark}
+                        label="No listings"
+                        description="The market has nothing to trade. List a stock to open the board."
+                        action={
+                            <Button as={Link} to="/admin/stocks" variant="primary">
+                                List a stock
+                            </Button>
+                        }
+                    />
+                ) : (
+                    <>
+                        {/* Table — lg and up. The price controls need the width. */}
+                        <div className="hidden lg:block">
+                            <table className="w-full">
+                                <caption className="sr-only">
+                                    Listed stocks with live prices and price controls
+                                </caption>
+                                <thead>
+                                    <tr className="border-b border-phosphor/20 bg-ink-raised">
+                                        <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            Ticker
+                                        </th>
+                                        <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            Name
+                                        </th>
+                                        <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            Open
+                                        </th>
+                                        <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            Price
+                                        </th>
+                                        <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            Change
+                                        </th>
+                                        {showActions ? (
+                                            <th scope="col" className="px-4 py-2 text-center font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Adjust price
+                                            </th>
+                                        ) : null}
+                                        {showDeleteColumn ? (
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Delist
+                                            </th>
+                                        ) : null}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stocks.map((stock) => {
+                                        const change = priceChange(stock);
+                                        return (
+                                            <tr key={stock._id} className="data-row">
+                                                <td className="px-4 py-3">{ticker(stock)}</td>
+                                                <td className="max-w-[14rem] truncate px-4 py-3 font-term text-sm text-phosphor-bright">
+                                                    {stock.name}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor-mid">
+                                                    {money(stock.openingPrice)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                    {money(stock.price)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-xs">
+                                                    <Change absolute={change.absolute} percent={change.percent} />
+                                                </td>
+                                                {showActions ? (
+                                                    <td className="px-4 py-3">{priceControls(stock)}</td>
+                                                ) : null}
+                                                {showDeleteColumn ? (
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            icon
+                                                            onClick={() => setPendingDelete(stock)}
+                                                            loading={deletingStockId === stock._id}
+                                                            aria-label={`Delist ${stock.ticker}`}
+                                                        >
+                                                            <Trash2 className="size-3.5" aria-hidden="true" />
+                                                        </Button>
+                                                    </td>
+                                                ) : null}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Stacked rows — below lg */}
+                        <ul className="lg:hidden">
+                            {stocks.map((stock) => {
+                                const change = priceChange(stock);
+                                return (
+                                    <li key={stock._id} className="border-b border-phosphor/15 px-4 py-3.5 last:border-b-0">
+                                        <div className="flex items-center justify-between gap-3">
+                                            {ticker(stock)}
+                                            <span className="font-term text-base text-phosphor-bright">
+                                                {money(stock.price)}
                                             </span>
-                                        </Link>
-                                    </td>
-                                    {showActions && (
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-center gap-1">
-                                                <button
-                                                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white p-1 rounded text-s font-semibold min-w-[30px] transition-colors"
-                                                    title={`Increase Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePriceIncrease(stock.ticker, stock.price, stock._id);
-                                                    }}
-                                                    disabled={updatingStock}
-                                                >
-                                                    {updatingStock ? (
-                                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mx-auto" />
-                                                    ) : (
-                                                        <ChevronUp className="size-3 m-auto" />
-                                                    )}
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    value={getPriceAdjustmentValue(stock._id)}
-                                                    onChange={(e) => handlePriceAdjustmentChange(stock._id, e.target.value)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="bg-transparent w-16 rounded px-1 py-1 text-white text-xs text-center focus:border-green-500 focus:outline-none"
-                                                    min="1"
-                                                    step="1"
-                                                    placeholder="10"
-                                                />
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-1 rounded text-xs font-semibold min-w-[30px] transition-colors"
-                                                    title={`Decrease Price by $${getPriceAdjustmentValue(stock._id)}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePriceDecrease(stock.ticker, stock.price, stock._id);
-                                                    }}
-                                                    disabled={updatingStock}
-                                                >
-                                                    {updatingStock ? (
-                                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mx-auto" />
-                                                    ) : (
-                                                        <ChevronDown className="size-3 m-auto" />
-                                                    )}
-                                                </button>
+                                        </div>
+                                        <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                                            <span className="min-w-0 truncate font-term text-xs text-phosphor-mid">
+                                                {stock.name}
+                                            </span>
+                                            <Change
+                                                absolute={change.absolute}
+                                                percent={change.percent}
+                                                className="shrink-0 text-xs"
+                                            />
+                                        </div>
+                                        {showActions || showDeleteColumn ? (
+                                            <div className="mt-3 flex items-center justify-between gap-3">
+                                                {showActions ? priceControls(stock) : <span />}
+                                                {showDeleteColumn ? (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="danger"
+                                                        icon
+                                                        onClick={() => setPendingDelete(stock)}
+                                                        loading={deletingStockId === stock._id}
+                                                        aria-label={`Delist ${stock.ticker}`}
+                                                    >
+                                                        <Trash2 className="size-3.5" aria-hidden="true" />
+                                                    </Button>
+                                                ) : null}
                                             </div>
-                                        </td>
-                                    )}
-                                    <td className="py-4 px-4 text-left">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-green-400 font-semibold hover:text-green-300 transition-colors"
-                                        >
-                                            ${stock.price.toFixed(2)}
-                                        </Link>
-                                    </td>
-                                    <td className="py-4 px-4 text-left">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-gray-400 font-medium hover:text-gray-300 transition-colors"
-                                        >
-                                            ${stock.openingPrice ? stock.openingPrice.toFixed(2) : '0.00'}
-                                        </Link>
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="block"
-                                        >
-                                            {renderPriceChange(stock)}
-                                        </Link>
-                                    </td>
-                                    <td className="py-4 px-4 text-white">
-                                        <Link
-                                            to={`/admin/stocks/${stock._id}`}
-                                            className="text-white hover:text-gray-300 transition-colors"
-                                        >
-                                            {stock.name}
-                                        </Link>
-                                    </td>
+                                        ) : null}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </>
+                )}
+            </Panel>
 
-                                    {showDeleteColumn && (
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
-                                                    title="Delete Stock"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(stock._id);
-                                                    }}
-                                                    disabled={deletingStockId === stock._id}
-                                                >
-                                                    {deletingStockId === stock._id ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+            <ConfirmDialog
+                open={Boolean(pendingDelete)}
+                title={`Delist ${pendingDelete?.ticker ?? ""}?`}
+                description={
+                    pendingDelete
+                        ? `${pendingDelete.name} is removed from the market board and can no longer be traded. Participants keep any shares they already hold, and this cannot be undone.`
+                        : undefined
+                }
+                confirmLabel="Delist"
+                loading={deletingStockId === pendingDelete?._id}
+                onConfirm={async () => {
+                    const id = pendingDelete._id;
+                    setPendingDelete(null);
+                    await deleteStock(id);
+                }}
+                onCancel={() => setPendingDelete(null)}
+            />
+        </>
     );
 };
 
-export default StockTable;
+export default AdminStockTable;

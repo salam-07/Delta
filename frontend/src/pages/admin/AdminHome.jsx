@@ -1,11 +1,23 @@
-import { useEffect } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
-import { useMarketStore } from '../../store/useMarketStore';
-import StockTable from '../../components/admin/AdminStockTable';
-import DevTable from '../../components/admin/AdminDevTable';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useAdminStore } from "../../store/useAdminStore";
+import AdminLayout from "../../layouts/AdminLayout";
+import AdminStockTable from "../../components/admin/AdminStockTable";
+import AdminDevTable from "../../components/admin/AdminDevTable";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { Lamp } from "../../components/ui/Feedback";
+import { Readout, ReadoutStrip } from "../../components/ui/Readout";
+import { count } from "../../lib/format";
 
+/**
+ * The administrator's overview: the one switch that stops and starts trading,
+ * the board as participants see it, and what is queued on the wire.
+ */
 const AdminHome = () => {
-    const { marketOpen,
+    const {
+        marketOpen,
         toggleMarketStatus,
         isMarketStatusLoading,
         fetchMarketStatus,
@@ -13,72 +25,81 @@ const AdminHome = () => {
         stocks,
         devs,
         isDevsLoading,
-        fetchAllDev } = useMarketStore();
+        fetchAllDevsAsAdmin,
+    } = useMarketStore();
+    const { postDev } = useAdminStore();
 
-    // Fetch data on component mount
+    // `fetchAllDevsAsAdmin` was missing from this effect, so the developments
+    // panel below was permanently empty on a fresh load.
     useEffect(() => {
         fetchAllStocks();
         fetchMarketStatus();
-    }, [fetchAllStocks, fetchMarketStatus]);
+        fetchAllDevsAsAdmin();
+    }, [fetchAllStocks, fetchMarketStatus, fetchAllDevsAsAdmin]);
 
-    const handleToggleStatus = async (devId, currentStatus) => {
-        // Convert currentStatus string to boolean and invert it
-        const newStatus = currentStatus === 'draft'; // draft becomes true (published), published becomes false (draft)
-        await postDev(devId, { status: newStatus });
-        // Refresh the developments list to show updated status
-        fetchAllDev();
-    };
+    // `postDev` was called here without being imported, so publishing from the
+    // overview threw a ReferenceError instead of publishing anything.
+    const handleToggleStatus = (dev) => postDev(dev._id, { status: !dev.posted });
+
+    const published = devs.filter((dev) => dev.posted).length;
 
     return (
         <AdminLayout title="Overview">
-            {/* Overview Content */}
             <div className="space-y-6">
-                {/* Main Grid Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Panel ticks>
+                    <PanelHeader label="Market state">
+                        <span className="flex items-center gap-2 font-term text-[11px] uppercase tracking-label">
+                            <Lamp on={marketOpen} />
+                            <span className={marketOpen ? "text-signal-up" : "text-signal-down"}>
+                                {marketOpen ? "Open" : "Closed"}
+                            </span>
+                        </span>
+                    </PanelHeader>
 
-                    {/* Market Control - Large Button */}
-                    <div className="lg:col-span-1">
-                        <div className="p-6 rounded-lg h-full flex flex-col justify-center">
-                            <h3 className="text-lg font-semibold text-white mb-4 text-center">Control Market Status</h3>
-                            <button
-                                onClick={toggleMarketStatus}
-                                disabled={isMarketStatusLoading}
-                                className={`w-full h-32 rounded-lg font-bold text-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${marketOpen
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-green-600 hover:bg-green-700 text-white'
-                                    }`}
-                            >
-                                {isMarketStatusLoading ? 'UPDATING...' : (marketOpen ? 'CLOSE MARKET' : 'OPEN MARKET')}
-                            </button>
-                            <p className="text-sm text-gray-400 text-center mt-4">
-                                Current Status: <span className={marketOpen ? 'text-green-400' : 'text-red-400'}>
-                                    {marketOpen ? 'Open' : 'Closed'}
-                                </span>
-                            </p>
-                        </div>
+                    <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-md font-term text-xs leading-relaxed text-phosphor-mid">
+                            {marketOpen
+                                ? "Orders are being accepted. Closing the market blocks every buy and sell until you open it again."
+                                : "Orders are being rejected. Participants can read the board and the wire, but cannot trade."}
+                        </p>
+                        <Button
+                            variant={marketOpen ? "danger" : "primary"}
+                            size="lg"
+                            onClick={toggleMarketStatus}
+                            loading={isMarketStatusLoading}
+                            className="sm:w-44"
+                        >
+                            {marketOpen ? "Close market" : "Open market"}
+                        </Button>
                     </div>
 
-                    <div className="lg:col-span-2">
-                        <StockTable
-                            showActions={false}
-                            showDeleteColumn={false}
-                            showRefreshButton={false}
-                            title="Stocks"
-                        />
-                    </div>
+                    <ReadoutStrip cols={3} className="border-t border-phosphor/20">
+                        <Readout label="Listings" value={count(stocks.length)} />
+                        <Readout label="Published" value={count(published)} tone="accent" />
+                        <Readout label="Drafts" value={count(devs.length - published)} tone="muted" />
+                    </ReadoutStrip>
+                </Panel>
 
-                    <div className="lg:col-span-3">
-                        <DevTable
-                            devs={devs}
-                            isLoading={isDevsLoading}
-                            onRefresh={fetchAllDev}
-                            onToggleStatus={handleToggleStatus}
-                            showRefreshButton={false}
-                            title="Latest Developments"
-                        />
-                    </div>
+                <AdminStockTable
+                    showActions={false}
+                    showDeleteColumn={false}
+                    showRefreshButton={false}
+                    title="Board"
+                />
 
-                </div>
+                <AdminDevTable
+                    devs={devs}
+                    isLoading={isDevsLoading}
+                    onRefresh={fetchAllDevsAsAdmin}
+                    onToggleStatus={handleToggleStatus}
+                    showRefreshButton={false}
+                    title="The wire"
+                    emptyAction={
+                        <Button as={Link} to="/admin/developments" variant="primary">
+                            Draft a development
+                        </Button>
+                    }
+                />
             </div>
         </AdminLayout>
     );

@@ -9,6 +9,8 @@ import {
     editDevelopment,
     deleteDevelopment,
     postDevelopment,
+    showDevelopments,
+    showDevelopment,
     showUsers,
     showTradingHistory,
     setMarketStatus,
@@ -26,6 +28,8 @@ router.put("/updatestock/:id", adminRoute, updatePrice);
 router.delete("/deletestock/:id", adminRoute, deleteStock);
 
 //development management routes
+router.get("/devs", adminRoute, showDevelopments);
+router.get("/dev/:id", adminRoute, showDevelopment);
 router.post("/createdev", adminRoute, newDevelopment);
 router.put("/editdev/:id", adminRoute, editDevelopment);
 router.delete("/deletedev/:id", adminRoute, deleteDevelopment);

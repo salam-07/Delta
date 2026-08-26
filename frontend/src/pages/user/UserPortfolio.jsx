@@ -1,9 +1,22 @@
-import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, Wallet, PieChart, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { PieChart, RefreshCw } from "lucide-react";
 import UserLayout from "../../layouts/UserLayout";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useMarketStore } from "../../store/useMarketStore";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { Change, Readout, ReadoutStrip } from "../../components/ui/Readout";
+import { EmptyState, SkeletonRows, SkeletonValue } from "../../components/ui/Feedback";
+import { count, money, signedMoney } from "../../lib/format";
 
+/**
+ * What the participant owns and what it is worth right now.
+ *
+ * The position summary is one ruled strip rather than a wall of hero numbers:
+ * net worth only means something next to the cash and holdings that make it up,
+ * and the return that follows from them, so all four are read in one sweep.
+ */
 const UserPortfolio = () => {
     const {
         portfolio,
@@ -13,8 +26,9 @@ const UserPortfolio = () => {
         getTotalAssets,
         getPortfolioValue,
         getProfitLoss,
+        getProfitLossPercentage,
         isLoadingPortfolio,
-        isLoadingBalance
+        isLoadingBalance,
     } = useTradeStore();
 
     const { stocks, fetchAllStocks } = useMarketStore();
@@ -25,36 +39,31 @@ const UserPortfolio = () => {
         fetchAllStocks();
     }, [viewPortfolio, checkBalance, fetchAllStocks]);
 
-    // Calculate portfolio performance
+    const isLoading = isLoadingPortfolio || isLoadingBalance;
+
     const portfolioValue = getPortfolioValue();
     const totalAssets = getTotalAssets();
+    const profitLoss = getProfitLoss();
+    const profitLossPercentage = getProfitLossPercentage();
 
-    // Get current market prices for portfolio stocks
-    const getStockCurrentPrice = (ticker) => {
-        const stock = stocks.find(s => s.ticker === ticker);
-        return stock ? parseFloat(stock.price) : 0;
-    };
-
-    // Calculate profit/loss for each stock
-    const calculateStockPerformance = (portfolioStock) => {
-        const currentPrice = getStockCurrentPrice(portfolioStock.ticker);
-        const buyPrice = parseFloat(portfolioStock.tradePrice) || 0;
-        const quantity = parseFloat(portfolioStock.amount) || 0;
-
-        const currentValue = currentPrice * quantity;
-        const investedValue = buyPrice * quantity;
-        const profitLoss = currentValue - investedValue;
-        const profitLossPercentage = investedValue > 0 ? ((profitLoss / investedValue) * 100) : 0;
+    /** A holding valued at the live market price, not the price it was bought at. */
+    const position = (holding) => {
+        const stock = stocks.find((s) => s.ticker === holding.ticker);
+        const currentPrice = stock ? parseFloat(stock.price) : null;
+        const buyPrice = parseFloat(holding.tradePrice) || 0;
+        const quantity = parseFloat(holding.amount) || 0;
+        const invested = buyPrice * quantity;
+        const marketValue = currentPrice === null ? null : currentPrice * quantity;
+        const gain = marketValue === null ? null : marketValue - invested;
 
         return {
+            name: stock?.name ?? null,
             currentPrice,
             buyPrice,
             quantity,
-            currentValue,
-            investedValue,
-            profitLoss,
-            profitLossPercentage: profitLossPercentage.toFixed(2),
-            isProfit: profitLoss >= 0
+            marketValue,
+            gain,
+            gainPercent: gain === null || invested <= 0 ? null : (gain / invested) * 100,
         };
     };
 
@@ -64,202 +73,186 @@ const UserPortfolio = () => {
         fetchAllStocks();
     };
 
-    const isLoading = isLoadingPortfolio || isLoadingBalance;
+    const refresh = (
+        <Button size="sm" variant="ghost" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`size-3 shrink-0 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
+            Refresh
+        </Button>
+    );
 
     return (
-        <UserLayout title="Portfolio Overview">
+        <UserLayout title="Portfolio" actions={refresh}>
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
-                        <p className="text-gray-400 mt-1">Track your investments and performance</p>
-                    </div>
-                    <button
-                        onClick={handleRefresh}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-                        Refresh
-                    </button>
-                </div>
-
-                {/* Top Section - Total Assets and Performance */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left - Total Assets */}
-                    <div className="p-6">
-                        <div className="text-center lg:text-left">
-                            <h3 className="text-lg font-medium text-gray-400 mb-4">Net Worth</h3>
-                            <div className="text-6xl lg:text-8xl font-bold text-white mb-2">
-                                {`$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right - Performance */}
-                    <div className="p-6">
-                        <div className="text-center lg:text-right">
-                            <h3 className="text-lg font-medium text-gray-400 mb-4">Performance</h3>
-                            <div className="flex flex-col items-center lg:items-end">
-                                {isLoading ? (
-                                    <div className="w-40 h-24 bg-gray-700 animate-pulse rounded-lg"></div>
+                <Panel ticks>
+                    <PanelHeader label="Position" />
+                    <ReadoutStrip cols={4}>
+                        <Readout
+                            label="Net worth"
+                            value={isLoading ? <SkeletonValue className="w-28" /> : money(totalAssets)}
+                            note="Cash and holdings"
+                            tone="accent"
+                            size="lg"
+                        />
+                        <Readout
+                            label="Cash"
+                            value={isLoading ? <SkeletonValue className="w-24" /> : money(balance)}
+                            note="Available to trade"
+                        />
+                        <Readout
+                            label="Holdings"
+                            value={isLoading ? <SkeletonValue className="w-24" /> : money(portfolioValue)}
+                            note={`${count(portfolio.length)} ${portfolio.length === 1 ? "position" : "positions"}`}
+                        />
+                        <Readout
+                            label="Return"
+                            value={
+                                isLoading ? (
+                                    <SkeletonValue className="w-24" />
                                 ) : (
-                                    (() => {
-                                        const profitLoss = getProfitLoss();
-                                        const profitLossPercentage = totalAssets > 0 ? ((profitLoss / (totalAssets - profitLoss)) * 100) : 0;
-                                        const isProfit = profitLoss >= 0;
+                                    <Change
+                                        absolute={profitLoss}
+                                        percent={profitLossPercentage}
+                                        size="lg"
+                                    />
+                                )
+                            }
+                            note="Against starting cash"
+                        />
+                    </ReadoutStrip>
+                </Panel>
 
-                                        return (
-                                            <div className={`flex flex-col ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    {isProfit ? <TrendingUp size={64} /> : <TrendingDown size={64} />}
-                                                    <span className="text-6xl lg:text-8xl font-bold">
-                                                        {isProfit ? '+' : ''}{profitLossPercentage.toFixed(1)}%
-                                                    </span>
-                                                </div>
-                                                <p className="text-xl md:text-2xl font-medium text-gray-300 text-right">
-                                                    {isProfit ? '+' : ''}${Math.abs(profitLoss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </p>
-                                            </div>
-                                        );
-                                    })()
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Portfolio Summary */}
-                <div className="p-8">
-                    <div className="flex flex-row justify-between items-center lg:items-center gap-8">
-                        {/* Left Side - Financial Metrics */}
-                        <div className="flex-1 space-y-6">
-
-                            {/* Cash Balance & Portfolio Value */}
-                            <div className="flex flex-col sm:flex-row gap-6 lg:gap-12">
-                                {/* Cash Balance */}
-                                <div className="flex-1">
-                                    <p className="text-gray-500 text-xs font-medium tracking-wide uppercase mb-2">Cash Balance</p>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-semibold text-green-400">
-                                        {isLoading ? (
-                                            <div className="w-32 h-10 bg-gray-700 animate-pulse rounded"></div>
-                                        ) : (
-                                            `$${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-                                        )}
-                                    </p>
-                                </div>
-
-                                {/* Portfolio Value */}
-                                <div className="flex-1">
-                                    <p className="text-gray-500 text-xs font-medium tracking-wide uppercase mb-2">Portfolio Value</p>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-semibold text-green-400">
-                                        {isLoading ? (
-                                            <div className="w-32 h-10 bg-gray-700 animate-pulse rounded"></div>
-                                        ) : (
-                                            `$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                {/* Portfolio Holdings */}
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-semibold text-white">Your Holdings</h2>
-                        <span className="text-sm text-gray-400">
-                            {portfolio.length} {portfolio.length === 1 ? 'stock' : 'stocks'}
+                <Panel>
+                    <PanelHeader label="Holdings">
+                        <span className="font-term text-[11px] text-phosphor-mid">
+                            {count(portfolio.length)} {portfolio.length === 1 ? "position" : "positions"}
                         </span>
-                    </div>
+                    </PanelHeader>
 
                     {isLoading && portfolio.length === 0 ? (
-                        <div className="text-center py-12">
-                            <div className="flex items-center justify-center gap-3 text-gray-400">
-                                <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                                <span>Loading portfolio...</span>
-                            </div>
-                        </div>
+                        <SkeletonRows rows={4} />
                     ) : portfolio.length === 0 ? (
-                        <div className="text-center py-12">
-                            <div className="mb-4">
-                                <PieChart className="w-16 h-16 text-gray-600 mx-auto" />
-                            </div>
-                            <h3 className="text-lg font-medium text-gray-300 mb-2">No Holdings Yet</h3>
-                            <p className="text-gray-500 mb-6">Start trading to build your portfolio</p>
-                            <button
-                                onClick={() => window.location.href = '/home'}
-                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors"
-                            >
-                                Start Trading
-                            </button>
-                        </div>
+                        <EmptyState
+                            icon={PieChart}
+                            label="No holdings yet"
+                            description="You hold cash only. Buy a stock on the market board and it appears here with its live value."
+                            action={
+                                <Button as={Link} to="/user/trade" variant="primary">
+                                    Place an order
+                                </Button>
+                            }
+                        />
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-gray-700">
-                                        <th className="text-left text-gray-300 font-medium py-3 px-4">Stock</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Shares</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Buy Price</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">Market Value</th>
-                                        <th className="text-right text-gray-300 font-medium py-3 px-4">P&L</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {portfolio.map((holding, index) => {
-                                        const performance = calculateStockPerformance(holding);
-                                        const stock = stocks.find(s => s.ticker === holding.ticker);
-
-                                        return (
-                                            <tr key={`${holding.ticker}-${index}`} className="border-b border-gray-800 hover:bg-primary/5 transition-colors">
-                                                <td className="py-4 px-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono w-fit mb-1">
+                        <>
+                            {/* Table — md and up */}
+                            <div className="hidden md:block">
+                                <table className="w-full">
+                                    <caption className="sr-only">
+                                        Your holdings with cost, live price, market value and profit or loss
+                                    </caption>
+                                    <thead>
+                                        <tr className="border-b border-phosphor/20 bg-ink-raised">
+                                            <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Stock
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Shares
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Cost
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Price
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                Value
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                                P&amp;L
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {portfolio.map((holding, index) => {
+                                            const p = position(holding);
+                                            return (
+                                                <tr key={`${holding.ticker}-${index}`} className="data-row">
+                                                    <td className="px-4 py-3">
+                                                        <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
                                                             {holding.ticker}
                                                         </span>
-                                                        <span className="text-gray-400 text-sm">
-                                                            {stock?.name || 'Unknown Company'}
+                                                        <span className="mt-1 block max-w-[14rem] truncate font-term text-xs text-phosphor-mid">
+                                                            {p.name ?? "No longer listed"}
                                                         </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-4 text-right text-white">
-                                                    {performance.quantity.toLocaleString()}
-                                                </td>
-                                                <td className="py-4 px-4 text-right text-gray-300">
-                                                    ${performance.buyPrice.toFixed(2)}
-                                                </td>
-                                                <td className="py-4 px-4 text-right text-white font-medium">
-                                                    ${performance.currentPrice.toFixed(2)}
-                                                </td>
-                                                <td className="py-4 px-4 text-right text-white font-semibold">
-                                                    ${performance.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="py-4 px-4 text-right">
-                                                    <div className={`flex items-center justify-end gap-1 ${performance.isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                                                        {performance.isProfit ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                                                        <div className="text-right">
-                                                            <div className="font-medium">
-                                                                {performance.isProfit ? '+' : ''}${Math.abs(performance.profitLoss).toFixed(2)}
-                                                            </div>
-                                                            <div className="text-sm">
-                                                                ({performance.isProfit ? '+' : ''}{performance.profitLossPercentage}%)
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                        {count(p.quantity)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-mid">
+                                                        {money(p.buyPrice)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                        {p.currentPrice === null ? "—" : money(p.currentPrice)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                        {p.marketValue === null ? "—" : money(p.marketValue)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right text-xs">
+                                                        <Change absolute={p.gain} percent={p.gainPercent} />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Stacked rows — below md */}
+                            <ul className="md:hidden">
+                                {portfolio.map((holding, index) => {
+                                    const p = position(holding);
+                                    return (
+                                        <li
+                                            key={`${holding.ticker}-${index}`}
+                                            className="border-b border-phosphor/15 px-4 py-3.5 last:border-b-0"
+                                        >
+                                            <div className="flex items-baseline justify-between gap-3">
+                                                <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
+                                                    {holding.ticker}
+                                                </span>
+                                                <span className="font-term text-base text-phosphor-bright">
+                                                    {p.marketValue === null ? "—" : money(p.marketValue)}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                                                <span className="min-w-0 truncate font-term text-xs text-phosphor-mid">
+                                                    {count(p.quantity)} @ {money(p.buyPrice)} → {p.currentPrice === null ? "—" : money(p.currentPrice)}
+                                                </span>
+                                                <Change
+                                                    absolute={p.gain}
+                                                    percent={p.gainPercent}
+                                                    className="shrink-0 text-xs"
+                                                />
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+
+                            <div className="flex items-baseline justify-between gap-4 border-t border-phosphor/25 bg-ink-raised px-4 py-3">
+                                <span className="font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                    Total holdings value
+                                </span>
+                                <span className="font-term text-sm text-phosphor-bright">{money(portfolioValue)}</span>
+                            </div>
+                        </>
                     )}
-                </div>
+                </Panel>
+
+                <p className="font-term text-[11px] leading-relaxed text-phosphor-mid">
+                    Cost is the price paid per share. P&amp;L compares it against the live market price and is
+                    unrealised until the position is sold. {signedMoney(profitLoss)} is your return across the whole
+                    account, cash included.
+                </p>
             </div>
         </UserLayout>
     );

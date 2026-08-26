@@ -1,71 +1,144 @@
+import { ChevronRight, HelpCircle } from "lucide-react";
 import UserLayout from "../../layouts/UserLayout";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
 
-const UserHelp = () => {
-    return (
-        <UserLayout title="Help & FAQ">
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-4">Help & Support</h1>
-                    <p className="text-gray-400">Find answers to frequently asked questions</p>
-                </div>
+/**
+ * Help, written against what the product actually does.
+ *
+ * Native `<details>` rather than the daisyUI radio-input accordion this page
+ * used: radio inputs cannot all be closed once one is open, and a disclosure
+ * list is exactly what `<details>` is for — keyboard-operable, findable by the
+ * browser's own in-page search, and correct with no JavaScript.
+ */
+const FAQ = [
+    {
+        q: "How do I place an order?",
+        a: (
+            <>
+                <p>Two routes lead to the same fill:</p>
+                <ol className="ml-4 list-outside list-decimal space-y-1.5">
+                    <li>
+                        <strong className="text-phosphor">Market</strong> — the board lists every stock with its live
+                        price. Set a share count on the row and press Buy or Sell.
+                    </li>
+                    <li>
+                        <strong className="text-phosphor">Trade</strong> — pick one stock and work the full ticket:
+                        order value, resulting cash, and realised profit or loss are all stated before you commit.
+                    </li>
+                </ol>
+                <p>
+                    Orders fill immediately at the price shown. There is no confirmation step, so read the figures
+                    first.
+                </p>
+            </>
+        ),
+    },
+    {
+        q: "Why is the Sell button disabled?",
+        a: (
+            <p>
+                You can only sell shares you hold. Sell stays disabled on a stock until you own at least one share of
+                it, and the share field will not accept more than your holding. Your holding for the selected stock is
+                shown on the Trade ticket.
+            </p>
+        ),
+    },
+    {
+        q: "How much cash do I start with?",
+        a: (
+            <p>
+                Every participant is credited <strong className="text-phosphor">$3,000</strong> at signup. That figure
+                is also the basis for your return: the percentage on your Portfolio compares your current net worth —
+                cash plus holdings at live prices — against it.
+            </p>
+        ),
+    },
+    {
+        q: "Why did a price suddenly move?",
+        a: (
+            <p>
+                Prices move when an administrator publishes a development. A development can carry price changes for
+                one or more stocks, and they apply the moment it goes out on the wire. Read Developments to see what
+                moved and why; the price record on the Trade page shows the move itself.
+            </p>
+        ),
+    },
+    {
+        q: "What does Open or Closed mean in the top bar?",
+        a: (
+            <p>
+                It is the market's trading state, set by an administrator. Orders are only accepted while the market is
+                open. The lamp beside it stays lit for as long as trading is live, so you can check without leaving the
+                page you are on.
+            </p>
+        ),
+    },
+    {
+        q: "How is profit and loss worked out?",
+        a: (
+            <>
+                <p>Two different figures, both on your Portfolio:</p>
+                <ul className="ml-4 list-outside list-disc space-y-1.5">
+                    <li>
+                        <strong className="text-phosphor">Per position</strong> — the live price against the price you
+                        paid, multiplied by the shares you hold. Unrealised until you sell.
+                    </li>
+                    <li>
+                        <strong className="text-phosphor">Return</strong> — your whole account, cash included, against
+                        the $3,000 you started with.
+                    </li>
+                </ul>
+                <p>History lists every order you have filled, newest first, with the price each one filled at.</p>
+            </>
+        ),
+    },
+];
 
-                {/* Accordion */}
-                <div className="max-w-4xl mx-auto space-y-4">
-                    <div className="collapse collapse-arrow border border-gray-700">
-                        <input type="radio" name="help-accordion" defaultChecked />
-                        <div className="collapse-title text-xl font-medium text-white">
-                            How do I start trading stocks?
-                        </div>
-                        <div className="collapse-content">
-                            <div className="text-gray-300 space-y-3">
-                                <p>Getting started with trading is easy:</p>
-                                <ol className="list-decimal list-inside space-y-2 ml-4">
-                                    <li>Navigate to the "Trade" section from your dashboard</li>
-                                    <li>Select a stock from the dropdown menu</li>
-                                    <li>Choose whether you want to buy or sell</li>
-                                    <li>Enter the number of shares you want to trade</li>
-                                    <li>Review the trade summary and click the trade button</li>
-                                </ol>
-                                <p className="text-sm text-gray-400 mt-4">
-                                    <strong>Note:</strong> Make sure you have sufficient balance for buying stocks or own shares for selling.
-                                </p>
+const UserHelp = () => (
+    <UserLayout title="Help">
+        <div className="mx-auto max-w-3xl space-y-6">
+            <Panel ticks>
+                <PanelHeader label="Common questions" />
+                <div>
+                    {FAQ.map(({ q, a }) => (
+                        <details key={q} className="group border-b border-phosphor/15 last:border-b-0">
+                            <summary
+                                className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5
+                                    font-term text-sm text-phosphor-bright transition-colors hover:bg-phosphor/5
+                                    focus-visible:bg-phosphor/5 [&::-webkit-details-marker]:hidden"
+                            >
+                                {q}
+                                <ChevronRight
+                                    aria-hidden="true"
+                                    className="size-4 shrink-0 text-phosphor-mid transition-transform group-open:rotate-90"
+                                />
+                            </summary>
+                            <div className="space-y-3 border-t border-phosphor/10 px-4 py-4 font-term text-xs leading-relaxed text-phosphor-mid">
+                                {a}
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="collapse collapse-arrow border border-gray-700">
-                        <input type="radio" name="help-accordion" />
-                        <div className="collapse-title text-xl font-medium text-white">
-                            How do I check my portfolio and account balance?
-                        </div>
-                        <div className="collapse-content">
-                            <div className="text-gray-300 space-y-3">
-                                <p>You can monitor your investments through multiple sections:</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>Portfolio:</strong> View all your holdings, total assets, and performance metrics</li>
-                                    <li><strong>Home Dashboard:</strong> Quick overview of your account balance and recent activity</li>
-                                    <li><strong>History:</strong> Detailed transaction history and trade records</li>
-                                </ul>
-                                <p className="mt-4">Your account balance and portfolio value are updated in real-time after each transaction.</p>
-                            </div>
-                        </div>
-                    </div>
+                        </details>
+                    ))}
                 </div>
+            </Panel>
 
-                {/* Additional Help Section */}
-                <div className="mt-12 text-center">
-                    <div className="p-6 max-w-2xl mx-auto">
-                        <h3 className="text-lg font-semibold text-white mb-2">Need More Help?</h3>
-                        <p className="text-gray-400 mb-4">
-                            Can't find what you're looking for? Our support team is here to help you with any questions.
-                        </p>
-                        <p className="text-gray-400">Contact at: <span className="text-green-400">0333-729-8886</span></p>
-                    </div>
+            <Panel>
+                <PanelHeader label="Still stuck" />
+                <div className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:gap-5">
+                    <HelpCircle className="size-5 shrink-0 text-phosphor-dim" strokeWidth={1.5} aria-hidden="true" />
+                    <p className="font-term text-xs leading-relaxed text-phosphor-mid">
+                        If the answer is not above, contact support at{" "}
+                        <a
+                            href="tel:03337298886"
+                            className="text-phosphor underline decoration-phosphor/40 underline-offset-4 transition-colors hover:decoration-phosphor"
+                        >
+                            0333-729-8886
+                        </a>
+                        .
+                    </p>
                 </div>
-            </div>
-        </UserLayout>
-    );
-};
+            </Panel>
+        </div>
+    </UserLayout>
+);
 
 export default UserHelp;

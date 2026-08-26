@@ -1,262 +1,189 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, DollarSign, Edit3, ChevronUp, ChevronDown } from 'lucide-react';
-import AdminLayout from '../../layouts/AdminLayout';
-import { useMarketStore } from '../../store/useMarketStore';
-import { useAdminStore } from '../../store/useAdminStore';
-import PriceChart from '../../components/PriceChart';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import AdminLayout from "../../layouts/AdminLayout";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useAdminStore } from "../../store/useAdminStore";
+import PriceChart from "../../components/PriceChart";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { TextField } from "../../components/ui/Field";
+import { Change, Readout, ReadoutStrip } from "../../components/ui/Readout";
+import { ErrorPanel, LoadingPanel } from "../../components/ui/Feedback";
+import { money, priceChange } from "../../lib/format";
 
+/**
+ * One listing, in full: its price, the record of how it got there, and the
+ * controls that move it.
+ */
 const AdminStockView = () => {
     const { stockId } = useParams();
     const navigate = useNavigate();
-    const [priceAdjustment, setPriceAdjustment] = useState(10);
-    const [companyInfo, setCompanyInfo] = useState('');
+    const [step, setStep] = useState("10");
+    const [companyInfo, setCompanyInfo] = useState("");
 
     const {
         stock,
         stocks,
-        history,
         fetchStock,
         fetchStockHistory,
         fetchAllStocks,
         fetchStockCompanyInfo,
         isStockLoading,
-        isHistoryLoading,
-        isStocksLoading
+        isStocksLoading,
     } = useMarketStore();
 
-    const { updateStock, updatingStock } = useAdminStore();
+    const { updateStock, updatingStockId } = useAdminStore();
 
     useEffect(() => {
-        if (stockId) {
-            fetchStock(stockId);
-            fetchStockHistory(stockId);
-
-            // Fetch company info
-            fetchStockCompanyInfo(stockId).then((data) => {
-                setCompanyInfo(data.companyInfo || '');
-            });
-        }
+        if (!stockId) return;
+        fetchStock(stockId);
+        fetchStockHistory(stockId);
+        fetchStockCompanyInfo(stockId).then((data) => setCompanyInfo(data.companyInfo || ""));
     }, [stockId, fetchStock, fetchStockHistory, fetchStockCompanyInfo]);
 
-    // Fetch all stocks for dropdown
     useEffect(() => {
         fetchAllStocks();
     }, [fetchAllStocks]);
 
-    const handleStockSelect = (e) => {
-        const selectedStockId = e.target.value;
-        if (selectedStockId && selectedStockId !== stockId) {
-            navigate(`/admin/stocks/${selectedStockId}`);
+    const stepValue = () => {
+        const parsed = parseFloat(step);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
+    };
+
+    const adjust = async (direction) => {
+        const newPrice = Math.max(0.01, Number(stock.price) + stepValue() * direction);
+        const updated = await updateStock(stockId, { newPrice });
+        if (updated) {
+            fetchStock(stockId);
+            fetchStockHistory(stockId);
         }
     };
 
-    const handlePriceIncrease = async () => {
-        const newPrice = stock.price + parseFloat(priceAdjustment);
-        await updateStock(stockId, { newPrice });
-        // Refresh data
-        fetchStock(stockId);
-        fetchStockHistory(stockId);
-    };
+    // A switcher, not a form field: changing it navigates. It sits in the page
+    // header because it is the fastest route between two listings.
+    const switcher = (
+        <>
+            <label htmlFor="listing-switcher" className="sr-only">
+                Switch to another listing
+            </label>
+            <select
+                id="listing-switcher"
+                value={stockId ?? ""}
+                onChange={(e) => {
+                    if (e.target.value && e.target.value !== stockId) navigate(`/admin/stocks/${e.target.value}`);
+                }}
+                disabled={isStocksLoading}
+                className="h-8 w-40 cursor-pointer border border-phosphor/25 bg-ink px-2 font-term text-xs
+                    text-phosphor-bright transition-colors hover:border-phosphor/40 focus:border-phosphor
+                    disabled:cursor-not-allowed disabled:border-phosphor-dim sm:w-56"
+            >
+                {isStocksLoading ? <option value="">Loading…</option> : null}
+                {stocks.map((option) => (
+                    <option key={option._id} value={option._id}>
+                        {option.ticker} — {option.name}
+                    </option>
+                ))}
+            </select>
+        </>
+    );
 
-    const handlePriceDecrease = async () => {
-        const newPrice = Math.max(0.01, stock.price - parseFloat(priceAdjustment)); // Ensure price doesn't go below 0.01
-        await updateStock(stockId, { newPrice });
-        // Refresh data
-        fetchStock(stockId);
-        fetchStockHistory(stockId);
-    };
-
-    // Simplified price change calculation using stock object properties
-    const calculatePriceChange = () => {
-        if (!stock) return { change: 0, percentage: 0 };
-
-        const currentPrice = stock.price || 0;
-        const openingPrice = stock.openingPrice || currentPrice;
-        const change = currentPrice - openingPrice;
-        const percentage = openingPrice > 0 ? (change / openingPrice) * 100 : 0;
-
-        return { change, percentage };
-    };
-
-    const priceChange = calculatePriceChange();
-    const openingPrice = stock?.openingPrice || stock?.price || 0;
-
-    if (isStockLoading) {
+    if (isStockLoading && !stock) {
         return (
-            <AdminLayout title="Stock Details">
-                <div className="flex items-center justify-center h-64">
-                    <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                </div>
+            <AdminLayout title="Listing">
+                <Panel>
+                    <LoadingPanel label="Loading listing" />
+                </Panel>
             </AdminLayout>
         );
     }
 
     if (!stock) {
         return (
-            <AdminLayout title="Stock Details">
-                <div className="text-center text-gray-400 mt-8">
-                    Stock not found
-                </div>
+            <AdminLayout title="Listing" actions={switcher}>
+                <Panel>
+                    <ErrorPanel
+                        label="Listing not found"
+                        description="This stock does not exist or has been delisted."
+                        action={
+                            <Button variant="primary" onClick={() => navigate("/admin/stocks")}>
+                                Back to stocks
+                            </Button>
+                        }
+                    />
+                </Panel>
             </AdminLayout>
         );
     }
 
+    const change = priceChange(stock);
+    const busy = updatingStockId === stockId;
+
     return (
-        <AdminLayout title={`${stock.ticker} - Stock Details`}>
+        <AdminLayout title={stock.ticker} actions={switcher}>
             <div className="space-y-6">
-                {/* Stock Selector Dropdown */}
-                <div className="p-4">
-                    <div className="flex items-center gap-4">
-                        <select
-                            id="stock-selector"
-                            value={stockId}
-                            onChange={handleStockSelect}
-                            disabled={isStocksLoading}
-                            className="bg-black border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-green-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex-1 max-w-md"
-                        >
-                            {isStocksLoading ? (
-                                <option value="">Loading stocks...</option>
-                            ) : (
-                                <>
-                                    <option value="">Select a stock...</option>
-                                    {stocks.map((stockOption) => (
-                                        <option key={stockOption._id} value={stockOption._id}>
-                                            {stockOption.ticker} - {stockOption.name}
-                                        </option>
-                                    ))}
-                                </>
-                            )}
-                        </select>
-                        {isStocksLoading && (
-                            <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        )}
-                    </div>
-                </div>
-                {/* Top Section - Price and Company Info */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left - Current Price */}
-                    <div className="p-6">
-                        <div className="text-center">
-                            <div className="text-6xl lg:text-8xl font-bold text-green-400 mb-2">
-                                ${stock.price?.toFixed(2) || '0.00'}
-                            </div>
-                            <div className={`flex items-center justify-center gap-2 text-lg ${priceChange.change >= 0 ? 'text-green-400' : 'text-red-400'
-                                }`}>
-                                {priceChange.change >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                                <span>{priceChange.change >= 0 ? '+' : ''}${priceChange.change.toFixed(2)}</span>
-                                <span>({priceChange.change >= 0 ? '+' : ''}{priceChange.percentage.toFixed(2)}%)</span>
-                            </div>
+                <Panel ticks>
+                    <PanelHeader label={stock.name || "Listing"}>
+                        <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
+                            {stock.ticker}
+                        </span>
+                    </PanelHeader>
+                    <ReadoutStrip cols={3}>
+                        <Readout label="Price" value={money(stock.price)} tone="accent" size="lg" />
+                        <Readout label="Open" value={money(stock.openingPrice ?? stock.price)} size="lg" />
+                        <Readout
+                            label="Change on open"
+                            size="lg"
+                            value={<Change absolute={change.absolute} percent={change.percent} size="lg" />}
+                        />
+                    </ReadoutStrip>
+                </Panel>
+
+                <Panel>
+                    <PanelHeader label="Price control" />
+                    <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-end">
+                        <TextField
+                            label="Step"
+                            type="number"
+                            value={step}
+                            onChange={(e) => setStep(e.target.value)}
+                            min="0.01"
+                            step="0.01"
+                            prefix="$"
+                            containerClassName="sm:w-40"
+                        />
+                        <div className="flex gap-2">
+                            <Button variant="buy" size="lg" onClick={() => adjust(1)} loading={busy}>
+                                <ChevronUp className="size-4 shrink-0" aria-hidden="true" />
+                                Raise {money(stepValue())}
+                            </Button>
+                            <Button variant="sell" size="lg" onClick={() => adjust(-1)} loading={busy}>
+                                <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
+                                Lower {money(stepValue())}
+                            </Button>
                         </div>
                     </div>
+                    <p className="border-t border-phosphor/15 px-4 py-2.5 font-term text-[11px] text-phosphor-mid">
+                        Every adjustment is recorded and broadcast to participants immediately. The price cannot go
+                        below {money(0.01)}.
+                    </p>
+                </Panel>
 
-                    {/* Right - Company Info */}
-                    <div className="p-6">
-                        <div className="text-center lg:text-right">
-                            <div className=" text-6xl lg:text-8xl font-bold text-white mb-2">
-                                {stock.ticker}
-                            </div>
-                            <div className="text-2xl text-gray-300 mb-4">
-                                {stock.name}
-                            </div>
-                        </div>
+                <Panel>
+                    <PanelHeader label="Price record" />
+                    <div className="px-4 py-4">
+                        <PriceChart stockId={stockId} height={300} />
                     </div>
-                </div>
+                </Panel>
 
-                {/* Price Update Section */}
-                <div className="p-6">
-
-
-                    <div className="flex items-center justify-center gap-4 flex-col md:flex-row">
-                        <button
-                            onClick={handlePriceIncrease}
-                            disabled={updatingStock}
-                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors"
-                            title={`Increase Price by $${priceAdjustment}`}
-                        >
-                            {updatingStock ? (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <ChevronUp size={20} />
-                            )}
-                            Increase by ${priceAdjustment}
-                        </button>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="number"
-                                    value={priceAdjustment}
-                                    onChange={(e) => setPriceAdjustment(e.target.value)}
-                                    className="bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-center w-20 focus:border-green-500 focus:outline-none"
-                                    min="0.01"
-                                    step="0.01"
-                                    placeholder="10"
-                                />
-                            </div>
-                        </div>
-                        <button
-                            onClick={handlePriceDecrease}
-                            disabled={updatingStock}
-                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors"
-                            title={`Decrease Price by $${priceAdjustment}`}
-                        >
-                            {updatingStock ? (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <ChevronDown size={20} />
-                            )}
-                            Decrease by ${priceAdjustment}
-                        </button>
-                    </div>
-
-                    <div className="mt-4 text-center text-gray-400 text-sm">
-                        Current Price: <span className="text-green-400 font-semibold">${stock?.price?.toFixed(2) || '0.00'}</span>
-                    </div>
-                </div>
-
-                {/* Price Chart */}
-                <div className="p-6">
-                    <PriceChart stockId={stockId} height={300} />
-                </div>
-
-                {/* Company Info Section */}
-                {companyInfo && (
-                    <div className="p-6">
-                        <h3 className="text-xl font-semibold text-white mb-4">Company Information</h3>
-                        <div className=" p-4">
-                            <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                                {companyInfo}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {/* Price Data */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="text-blue-400" size={20} />
-                            <span className="text-gray-300">Opening Price</span>
-                        </div>
-                        <div className="text-2xl font-bold text-white">
-                            ${openingPrice.toFixed(2)}
-                        </div>
-                    </div>
-
-                    <div className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            {priceChange.change >= 0 ?
-                                <TrendingUp className="text-green-400" size={20} /> :
-                                <TrendingDown className="text-red-400" size={20} />
-                            }
-                            <span className="text-gray-300">Price Change</span>
-                        </div>
-                        <div className={`text-2xl font-bold ${priceChange.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {priceChange.change >= 0 ? '+' : ''}${priceChange.change.toFixed(2)}
-                        </div>
-                    </div>
-                </div>
-
+                {companyInfo ? (
+                    <Panel>
+                        <PanelHeader label="Company information" />
+                        <p className="whitespace-pre-wrap px-4 py-4 font-term text-xs leading-relaxed text-phosphor-bright">
+                            {companyInfo}
+                        </p>
+                    </Panel>
+                ) : null}
             </div>
         </AdminLayout>
     );

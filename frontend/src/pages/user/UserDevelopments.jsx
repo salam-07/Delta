@@ -1,32 +1,22 @@
 import { useEffect } from "react";
-import DevTable from "../../components/user/UserDevTable";
+import UserDevTable from "../../components/user/UserDevTable";
 import UserLayout from "../../layouts/UserLayout";
 import { useMarketStore } from "../../store/useMarketStore";
 
-
 const UserDevelopments = () => {
-
-    const {
-        fetchAllDev,
-        devs,
-        fetchDev,
-        dev,
-        isDevsLoading,
-        isDevLoading
-    } = useMarketStore();
+    const { fetchAllDev, devs, isDevsLoading } = useMarketStore();
 
     useEffect(() => {
         fetchAllDev();
     }, [fetchAllDev]);
 
     return (
-        <UserLayout>
-            <DevTable
+        <UserLayout title="Developments">
+            <UserDevTable
                 devs={devs}
                 isLoading={isDevsLoading}
                 onRefresh={fetchAllDev}
-                showRefreshButton={true}
-                title="All Developments"
+                title="The wire"
             />
         </UserLayout>
     );

@@ -1,172 +1,220 @@
+import { useEffect, useMemo, useState } from "react";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useAdminStore } from "../../store/useAdminStore";
+import { useSocketStore } from "../../store/useSocketStore";
+import { Change } from "../../components/ui/Readout";
+import { Lamp } from "../../components/ui/Feedback";
+import { clockTime, count, money, priceChange } from "../../lib/format";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { useMarketStore } from '../../store/useMarketStore';
-import { useAdminStore } from '../../store/useAdminStore';
-import { useSocketStore } from '../../store/useSocketStore';
+/** How often the roster is re-read for the leaderboard, in milliseconds. */
+const ROSTER_POLL = 20_000;
 
+/** Prices shown at once. Anything past this is named in the panel header. */
+const BOARD_SIZE = 10;
+
+/**
+ * The wall display: a projector board for the room, read from across it.
+ *
+ * No controls, no navigation, nothing to click — so every pixel is a figure or
+ * the rule that separates two figures. Sizes are larger than the rest of the
+ * product because the viewing distance is metres, not centimetres.
+ */
 const AdminDisplay = () => {
     const { stocks, fetchAllStocks, marketOpen } = useMarketStore();
-    const { analytics, users, getAnalytics, getAllUsers } = useAdminStore();
+    const { users, getAllUsers } = useAdminStore();
     const { onlineUsers } = useSocketStore();
 
-    const [time, setTime] = useState(new Date().toLocaleTimeString());
+    const [time, setTime] = useState(() => clockTime());
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setTime(new Date().toLocaleTimeString());
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    // Add marquee animation styles
-    useEffect(() => {
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes marquee {
-                0% { transform: translateX(100%); }
-                100% { transform: translateX(-100%); }
-            }
-            .animate-marquee {
-                animation: marquee 60s linear infinite;
-            }
-        `;
-        document.head.appendChild(style);
-        return () => document.head.removeChild(style);
+        const tick = setInterval(() => setTime(clockTime()), 1000);
+        return () => clearInterval(tick);
     }, []);
 
     useEffect(() => {
         fetchAllStocks();
-        getAnalytics();
         getAllUsers();
-    }, [fetchAllStocks, getAnalytics, getAllUsers]);
+    }, [fetchAllStocks, getAllUsers]);
 
-    // Refresh users when stocks change for real-time net worth updates
+    // Balances and holdings change when anyone trades, and no socket event
+    // carries that. This used to be an effect keyed on `stocks`, which re-read
+    // the whole roster on every broadcast price tick and still missed trades
+    // that moved no price. A plain interval does the job and is predictable.
     useEffect(() => {
-        if (stocks && stocks.length > 0) {
-            getAllUsers();
-        }
-    }, [stocks, getAllUsers]);
+        const poll = setInterval(getAllUsers, ROSTER_POLL);
+        return () => clearInterval(poll);
+    }, [getAllUsers]);
 
-    // Memoized calculations for performance
-    const { topStocks, leaderboard, onlineUsersCount } = useMemo(() => ({
-        topStocks: stocks
-            ?.sort((a, b) => b.price - a.price)
-            .slice(0, 10) || [],
+    // `stocks.sort()` sorts in place, so this used to reorder the store's own
+    // array — and with it the market board every other page reads from.
+    const board = useMemo(
+        () => [...stocks].sort((a, b) => Number(b.price) - Number(a.price)).slice(0, BOARD_SIZE),
+        [stocks]
+    );
 
-        leaderboard: users
-            ?.filter(user => user.role !== 'admin')
-            .map(user => ({
-                name: user.fullName,
-                assets: (user.balance || 0) + (user.portfolio || []).reduce((sum, stock) => {
-                    const current = stocks?.find(s => s.ticker === stock.ticker);
-                    return sum + (current?.price || 0) * (stock.amount || 0);
-                }, 0)
-            }))
-            .sort((a, b) => b.assets - a.assets)
-            .slice(0, 6) || [],
+    const leaderboard = useMemo(
+        () =>
+            users
+                .map((user) => ({
+                    id: user._id,
+                    name: user.fullName || "Unnamed",
+                    assets:
+                        (Number(user.balance) || 0) +
+                        (user.portfolio ?? []).reduce((sum, holding) => {
+                            const live = stocks.find((stock) => stock.ticker === holding.ticker);
+                            return sum + (Number(live?.price) || 0) * (Number(holding.amount) || 0);
+                        }, 0),
+                }))
+                .sort((a, b) => b.assets - a.assets)
+                .slice(0, 6),
+        [users, stocks]
+    );
 
-        onlineUsersCount: onlineUsers.length
-    }), [stocks, users, onlineUsers]);
+    const tape = stocks.map((stock) => {
+        const { percent } = priceChange(stock);
+        return (
+            <span key={stock._id ?? stock.ticker} className="flex items-center gap-2.5 px-6 text-lg">
+                <span className="text-phosphor">{stock.ticker}</span>
+                <span className="text-phosphor-bright">{money(stock.price)}</span>
+                <Change percent={percent} showAbsolute={false} className="text-lg" />
+            </span>
+        );
+    });
 
-    const formatCurrency = (amount) => `$${amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}`;
-    const formatChange = (stock) => {
-        const change = (stock.price - stock.openingPrice) || 0;
-        const percent = stock.openingPrice > 0 ? (change / stock.openingPrice) * 100 : 0;
-        return { change, percent };
-    };
+    const rankClass = (index) =>
+        index === 0
+            ? "bg-phosphor text-ink"
+            : index < 3
+                ? "border border-phosphor/50 text-phosphor"
+                : "border border-phosphor/20 text-phosphor-mid";
 
     return (
-        <div className="mt-16 min-h-screen bg-black text-white font-mono overflow-hidden">
-            {/* Header */}
-            <div className="bg-green-900/30 border-b-2 border-green-400 px-8 py-1 flex justify-between items-center">
-                <div className="flex items-center gap-8">
-                    <h1 className="text-4xl font-bold text-green-400 tracking-wider">PSX TRADING FLOOR</h1>
-                    <div className={`flex items-center gap-2 text-2xl font-bold ${marketOpen ? 'text-green-400' : 'text-red-400'}`}>
-                        <div className={`w-4 h-4 rounded-full ${marketOpen ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
-                        {marketOpen ? 'MARKET OPEN' : 'MARKET CLOSED'}
+        <div className="flex h-full flex-col overflow-hidden bg-ink">
+            <header className="flex shrink-0 flex-wrap items-center gap-x-10 gap-y-3 border-b border-phosphor/30 bg-ink-panel px-6 py-3">
+                <h1 className="font-board text-3xl tracking-cell text-phosphor 2xl:text-4xl">
+                    DELTA TRADING FLOOR
+                </h1>
+
+                <span className="flex items-center gap-2.5 font-term text-xl uppercase tracking-label">
+                    <Lamp on={marketOpen} />
+                    <span className={marketOpen ? "text-signal-up" : "text-signal-down"}>
+                        {marketOpen ? "Market open" : "Market closed"}
+                    </span>
+                </span>
+
+                <dl className="ml-auto flex shrink-0 items-start gap-10 text-right">
+                    <div>
+                        <dt className="font-term text-[11px] uppercase tracking-label text-phosphor-mid">
+                            Participants live
+                        </dt>
+                        <dd className="font-term text-2xl text-phosphor-bright">{count(onlineUsers.length)}</dd>
                     </div>
-                </div>
-                <div className="text-right">
-                    <div className="text-green-400 text-lg">USERS LIVE</div>
-                    <div className="text-3xl">{onlineUsersCount}</div>
-                </div>
-                <div className="text-right">
-                    <div className="text-green-400 text-lg">LIVE CLOCK</div>
-                    <div className="text-3xl">
-                        {time}
+                    <div>
+                        <dt className="font-term text-[11px] uppercase tracking-label text-phosphor-mid">
+                            Floor clock
+                        </dt>
+                        <dd className="font-term text-2xl text-phosphor-bright">{time}</dd>
                     </div>
-                </div>
+                </dl>
+            </header>
+
+            {/* The tape. Two identical copies side by side, each sliding one full
+                width left, so the loop closes with no visible seam. */}
+            <div className="flex shrink-0 items-center overflow-hidden border-b border-phosphor/20 py-2.5">
+                {stocks.length === 0 ? (
+                    <p className="px-6 font-term text-lg text-phosphor-mid">
+                        No listings yet — the tape starts when the first stock is listed.
+                    </p>
+                ) : (
+                    <>
+                        <div className="flex shrink-0 animate-marquee-left items-center font-term">{tape}</div>
+                        <div aria-hidden="true" className="flex shrink-0 animate-marquee-left items-center font-term">
+                            {tape}
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Stock Ticker Marquee */}
-            <div className="bg-black border-y border-green-400/30 py-2 overflow-hidden">
-                <div className="flex gap-8 animate-marquee whitespace-nowrap">
-                    {stocks.concat(stocks).map((stock, index) => {
-                        const change = (stock.price - stock.openingPrice) || 0;
-                        const percent = stock.openingPrice > 0 ? (change / stock.openingPrice) * 100 : 0;
-                        const isPositive = change >= 0;
+            <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
+                <section className="flex min-h-0 min-w-0 flex-1 flex-col border-phosphor/20 xl:border-r">
+                    <h2 className="flex shrink-0 items-baseline justify-between gap-4 border-b border-phosphor/20 px-6 py-2.5 font-term text-sm uppercase tracking-label text-phosphor-mid">
+                        Market prices
+                        {stocks.length > BOARD_SIZE ? (
+                            <span className="font-term text-xs normal-case tracking-normal">
+                                Highest {BOARD_SIZE} of {count(stocks.length)}
+                            </span>
+                        ) : null}
+                    </h2>
 
-                        return (
-                            <div key={`${stock.ticker}-${index}`} className="flex items-center gap-2 text-lg">
-                                <span className="text-white font-bold">{stock.ticker}</span>
-                                <span className="text-white">${stock.price.toFixed(2)}</span>
-                                <span className={`font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                    {isPositive ? '+' : ''}{percent.toFixed(1)}%
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div className="flex h-[calc(100vh-160px)]">
-                {/* Stocks Panel - 60% */}
-                <div className="w-4/5 p-6 border-r-2 border-green-400/30">
-                    <h2 className="text-2xl font-bold text-green-400 mb-4 tracking-wider">MARKET PRICES</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {topStocks.map(stock => {
-                            const { change, percent } = formatChange(stock);
-                            const isPositive = change >= 0;
-                            return (
-                                <div key={stock.ticker} className="bg-green-900/10  px-4 py-2 rounded">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="text-2xl font-bold text-green-400">{stock.ticker}</div>
-                                            <div className="text-sm text-white/60 truncate">{stock.name}</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-3xl">{formatCurrency(stock.price)}</div>
-                                            <div className={`text-lg ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                                {isPositive ? '+' : ''}{formatCurrency(change)} ({percent.toFixed(2)}%)
+                    {board.length === 0 ? (
+                        <p className="hatch flex flex-1 items-center justify-center px-6 font-term text-xl text-phosphor-mid">
+                            Nothing is listed yet
+                        </p>
+                    ) : (
+                        <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-px overflow-y-auto bg-phosphor/15 sm:grid-cols-2">
+                            {board.map((stock) => {
+                                const { absolute, percent } = priceChange(stock);
+                                return (
+                                    <div
+                                        key={stock._id ?? stock.ticker}
+                                        className="flex min-w-0 items-center justify-between gap-6 bg-ink px-6 py-4"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="font-term text-3xl text-phosphor">{stock.ticker}</div>
+                                            <div className="truncate font-term text-sm text-phosphor-mid">
+                                                {stock.name}
                                             </div>
                                         </div>
+                                        <div className="shrink-0 text-right">
+                                            <div className="font-term text-3xl text-phosphor-bright">
+                                                {money(stock.price)}
+                                            </div>
+                                            <Change
+                                                absolute={absolute}
+                                                percent={percent}
+                                                size="lg"
+                                                className="justify-end text-lg"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
 
-                {/* Leaderboard Panel - 40% */}
-                <div className="w-1/5 p-6">
-                    <h2 className="text-2xl font-bold text-green-400 mb-4 tracking-wider">TOP INVESTORS</h2>
-                    <div className="space-y-3">
-                        {leaderboard.map((user, index) => (
-                            <div key={user.name} className="bg-green-900/10 border border-green-400/20 p-4 rounded flex justify-between items-center">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg
-                                        ${index === 0 ? 'bg-yellow-400 text-black' :
-                                            index === 1 ? 'bg-gray-300 text-black' :
-                                                index === 2 ? 'bg-orange-400 text-black' : 'bg-green-400/20 text-green-400'}`}>
+                <section className="flex min-h-0 shrink-0 flex-col border-t border-phosphor/20 xl:w-[26rem] xl:border-t-0">
+                    <h2 className="shrink-0 border-b border-phosphor/20 px-6 py-2.5 font-term text-sm uppercase tracking-label text-phosphor-mid">
+                        Standings
+                    </h2>
+
+                    {leaderboard.length === 0 ? (
+                        <p className="hatch flex flex-1 items-center justify-center px-6 font-term text-lg text-phosphor-mid">
+                            No participants yet
+                        </p>
+                    ) : (
+                        <ol className="min-h-0 flex-1 overflow-y-auto">
+                            {leaderboard.map((entry, index) => (
+                                <li
+                                    key={entry.id}
+                                    className="flex items-center gap-4 border-b border-phosphor/15 px-6 py-3.5 last:border-b-0"
+                                >
+                                    <span
+                                        className={`flex size-8 shrink-0 items-center justify-center font-term text-base ${rankClass(index)}`}
+                                    >
                                         {index + 1}
-                                    </div>
-                                    <div className="text-md font-medium">{user.name}</div>
-                                </div>
-                                <div className="text-xl font-bold text-green-400">{formatCurrency(user.assets)}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                                    </span>
+                                    <span className="min-w-0 flex-1 truncate font-term text-lg text-phosphor-bright">
+                                        {entry.name}
+                                    </span>
+                                    <span className="shrink-0 font-term text-lg text-phosphor">
+                                        {money(entry.assets)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </section>
             </div>
         </div>
     );

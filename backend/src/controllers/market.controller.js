@@ -61,12 +61,13 @@ export const getStockCompanyInfo = async (req, res) => {
     }
 };
 
+// Participants only ever see published developments. A development carries the
+// price changes it will trigger, so an unposted draft is pending market-moving
+// news: serving it here let any participant read it early by hitting the
+// endpoint directly. Administrators read drafts through /api/admin/devs.
 export const viewAllDevelopments = async (req, res) => {
     try {
-        const devs = await Development.find({}).sort({ createdAt: -1 }).lean();
-        if (!devs) {
-            return res.status(404).json({ message: "No Developments Found" });
-        }
+        const devs = await Development.find({ posted: true }).sort({ createdAt: -1 }).lean();
         res.status(200).json(devs);
     } catch (error) {
         console.log("Error in viewAllDevelopments Controller", error);
@@ -77,7 +78,10 @@ export const viewAllDevelopments = async (req, res) => {
 export const viewDevelopment = async (req, res) => {
     try {
         const { id } = req.params;
-        const dev = await Development.findById(id).lean();
+        const dev = await Development.findOne({ _id: id, posted: true }).lean();
+        if (!dev) {
+            return res.status(404).json({ message: "Development not found" });
+        }
         res.status(200).json(dev);
 
     } catch (error) {

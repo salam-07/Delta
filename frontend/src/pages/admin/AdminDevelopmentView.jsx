@@ -1,154 +1,152 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAdminStore } from "../../store/useAdminStore";
 import { useMarketStore } from "../../store/useMarketStore";
 import AdminLayout from "../../layouts/AdminLayout";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { ErrorPanel, LoadingPanel, StatusPill } from "../../components/ui/Feedback";
+import { dateTime, money } from "../../lib/format";
 
+/**
+ * A single development as the administrator sees it: draft or published, the
+ * prices it carries, and the one control that puts it on the wire.
+ *
+ * Publishing is a labelled button. It used to be the status badge itself — a
+ * `<span>` with `cursor-pointer` and a hover lift, unreachable by keyboard and
+ * silent to a screen reader.
+ */
 const AdminDevelopmentView = () => {
     const { devId } = useParams();
-    const navigate = useNavigate();
 
-    const { postDev, postingDev } = useAdminStore();
-    const { fetchDev, dev, isDevLoading } = useMarketStore();
+    const { postDev, postingDevId } = useAdminStore();
+    const { fetchDevAsAdmin, dev, isDevLoading } = useMarketStore();
 
     useEffect(() => {
-        if (devId) {
-            fetchDev(devId);
-        }
-    }, [devId, fetchDev]);
+        if (devId) fetchDevAsAdmin(devId);
+    }, [devId, fetchDevAsAdmin]);
 
     const handleToggleStatus = async () => {
         if (!dev) return;
-
-        // Convert current posted status and invert it
-        const newStatus = !dev.posted;
-        await postDev(devId, { status: newStatus });
-        // Refresh the development data
-        fetchDev(devId);
+        const changed = await postDev(devId, { status: !dev.posted });
+        if (changed) fetchDevAsAdmin(devId);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    const backToQueue = (
+        <Button as={Link} to="/admin/developments" size="sm" variant="ghost">
+            <ArrowLeft className="size-3 shrink-0" aria-hidden="true" />
+            Developments
+        </Button>
+    );
 
     if (isDevLoading) {
         return (
-            <AdminLayout title="Loading Development...">
-                <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-gray-400">
-                        <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        <span>Loading development...</span>
-                    </div>
-                </div>
+            <AdminLayout title="Development" actions={backToQueue}>
+                <Panel>
+                    <LoadingPanel label="Loading development" />
+                </Panel>
             </AdminLayout>
         );
     }
 
     if (!dev) {
         return (
-            <AdminLayout title="Development Not Found">
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="text-center">
-                        <h3 className="text-xl font-semibold text-white mb-2">Development Not Found</h3>
-                        <p className="text-gray-400 mb-6">The development you're looking for doesn't exist or may have been deleted.</p>
-                        <button
-                            onClick={() => navigate('/admin/developments')}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                        >
-                            <ArrowLeft size={16} />
-                            Back to Developments
-                        </button>
-                    </div>
-                </div>
+            <AdminLayout title="Development" actions={backToQueue}>
+                <Panel>
+                    <ErrorPanel
+                        label="Development not found"
+                        description="This development does not exist or has been deleted."
+                        action={
+                            <Button as={Link} to="/admin/developments" variant="primary">
+                                Back to developments
+                            </Button>
+                        }
+                    />
+                </Panel>
             </AdminLayout>
         );
     }
 
+    const moves = dev.stockPriceChanges ?? [];
+
     return (
-        <AdminLayout title={`Development: ${dev.title || 'Untitled'}`}>
-            <div className="max-w-4xl mx-auto p-6 space-y-6">
-                {/* Header with Back Button */}
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/admin/developments')}
-                        className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                    >
-                        <ArrowLeft size={16} />
-                        Back to Developments
-                    </button>
-                </div>
-
-                {/* Status Toggle */}
-                <div className="flex justify-between items-center p-4">
-                    <div className="flex items-center gap-3">
-                        <span className="text-gray-300 font-medium">Status:</span>
-                        <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200 ${dev.posted
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                }`}
+        <AdminLayout title="Development" actions={backToQueue}>
+            <div className="mx-auto max-w-3xl space-y-6">
+                <Panel>
+                    <PanelHeader label="Publish state">
+                        <StatusPill tone={dev.posted ? "live" : "draft"}>
+                            {dev.posted ? "Published" : "Draft"}
+                        </StatusPill>
+                    </PanelHeader>
+                    <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-md font-term text-xs leading-relaxed text-phosphor-mid">
+                            {dev.posted
+                                ? "This is on the wire and readable by every participant. Withdrawing it hides it again; the prices it set stay where they are."
+                                : moves.length > 0
+                                    ? "Participants cannot read this yet. Publishing puts it on the wire and applies the prices below at once."
+                                    : "Participants cannot read this yet. Publishing puts it on the wire."}
+                        </p>
+                        <Button
+                            variant={dev.posted ? "default" : "primary"}
                             onClick={handleToggleStatus}
-                            title={`Click to ${dev.posted ? 'mark as draft' : 'publish'}`}
+                            loading={postingDevId === devId}
+                            className="sm:w-40"
                         >
-                            {dev.posted ? 'Published' : 'Draft'}
-                        </span>
+                            {dev.posted ? "Withdraw" : "Publish"}
+                        </Button>
                     </div>
+                </Panel>
 
-                    {postingDev && (
-                        <div className="flex items-center gap-2 text-gray-400">
-                            <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm">Updating...</span>
+                {moves.length > 0 ? (
+                    <Panel>
+                        <PanelHeader label={dev.posted ? "Prices this set" : "Prices this will set"} />
+                        <ul>
+                            {moves.map((move) => (
+                                <li
+                                    key={move.stockId ?? move.ticker}
+                                    className="flex items-center justify-between gap-4 border-b border-phosphor/15 px-4 py-3 last:border-b-0"
+                                >
+                                    <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
+                                        {move.ticker}
+                                    </span>
+                                    <span className="font-term text-sm text-phosphor-bright">
+                                        {money(move.newPrice)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </Panel>
+                ) : null}
+
+                <Panel ticks as="article">
+                    <header className="border-b border-phosphor/20 px-5 py-5">
+                        <p className="font-term text-[11px] uppercase tracking-label text-signal-cyanDim">
+                            {dateTime(dev.createdAt)}
+                        </p>
+                        <h2 className="mt-2 font-board text-2xl leading-tight tracking-cell text-phosphor-bright sm:text-3xl">
+                            {dev.title || "Untitled development"}
+                        </h2>
+                    </header>
+
+                    {dev.content ? (
+                        <div className="whitespace-pre-wrap px-5 py-6 font-term text-sm leading-relaxed text-phosphor-bright">
+                            {dev.content}
                         </div>
+                    ) : (
+                        <p className="px-5 py-6 font-term text-sm text-phosphor-mid">
+                            This development has no body yet. Participants would see an empty item on the wire.
+                        </p>
                     )}
-                </div>
 
-                {/* Development Content */}
-                <div className="space-y-6">
-                    {/* Title */}
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            {dev.title || "Untitled Development"}
-                        </h1>
-
-                        {/* Metadata */}
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                            {dev.createdAt && (
-                                <span>Created: {formatDate(dev.createdAt)}</span>
-                            )}
-                            {dev.updatedAt && dev.updatedAt !== dev.createdAt && (
-                                <span>Updated: {formatDate(dev.updatedAt)}</span>
-                            )}
-                            {dev.content && (
-                                <span>Words: {dev.content.split(' ').length}</span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="backdrop-blur-sm rounded-lg p-6">
-                        {dev.content ? (
-                            <div className="prose prose-invert max-w-none">
-                                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                                    {dev.content}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-gray-500">
-                                <p className="text-lg">No content available</p>
-                                <p className="text-sm mt-2">This development doesn't have any content yet.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                    {dev.updatedAt && dev.updatedAt !== dev.createdAt ? (
+                        <footer className="border-t border-phosphor/20 bg-ink-raised px-5 py-2.5">
+                            <p className="font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                Revised {dateTime(dev.updatedAt)}
+                            </p>
+                        </footer>
+                    ) : null}
+                </Panel>
             </div>
         </AdminLayout>
     );

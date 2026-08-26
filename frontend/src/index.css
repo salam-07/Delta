@@ -2,8 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-*:focus {
-	outline: none !important;
+/* ==========================================================================
+   FOCUS — a real ring, product-wide.
+   This replaced a blanket `*:focus { outline: none !important }`, which left
+   every surface outside the landing page with no focus indicator at all.
+   Pointer users still never see a ring; keyboard users always do.
+   ========================================================================== */
+:focus {
+	outline: none;
+}
+
+:focus-visible {
+	outline: 2px solid #31d96a;
+	outline-offset: 2px;
+}
+
+/* Browser surfaces the design still owns. */
+::selection {
+	background-color: rgba(49, 217, 106, 0.3);
+	color: #dcf3e4;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -51,6 +68,144 @@ html {
 }
 
 /* ==========================================================================
+   APPLICATION LAYER — the participant and administrator product.
+   Scoped under .delta-app. Same palette and type discipline as the landing
+   page's terminal, but none of its tube theater: no scanlines, no bloom, no
+   flipping cells. People read prices here against a clock, so the surface
+   holds still and every number lines up.
+   ========================================================================== */
+
+.delta-app {
+	--ink: #050a07;
+	--ink-panel: #0a130d;
+	--ink-raised: #101b14;
+	--phos: #31d96a;
+	--phos-bright: #a8e6bf;
+	--phos-mid: #4fae79;
+	--phos-dim: #1c5c38;
+	--cyan: #22d3ee;
+	--rule: rgba(49, 217, 106, 0.14);
+	--rule-strong: rgba(49, 217, 106, 0.32);
+
+	background-color: var(--ink);
+	color: var(--phos-bright);
+	font-family: "Commit Mono", ui-monospace, SFMono-Regular, monospace;
+	font-variant-ligatures: none;
+	/* Every figure in the product is data: quantities, prices, timestamps.
+	   Tabular by default so columns never shift as values tick. */
+	font-variant-numeric: tabular-nums;
+	-webkit-font-smoothing: antialiased;
+	caret-color: var(--phos);
+}
+
+/* Scrollbars belong to the panel, not to the OS. */
+.delta-app *::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+.delta-app *::-webkit-scrollbar-track {
+	background-color: var(--ink);
+}
+.delta-app *::-webkit-scrollbar-thumb {
+	background-color: rgba(49, 217, 106, 0.22);
+	border: 2px solid var(--ink);
+}
+.delta-app *::-webkit-scrollbar-thumb:hover {
+	background-color: rgba(49, 217, 106, 0.4);
+}
+.delta-app * {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(49, 217, 106, 0.22) var(--ink);
+}
+
+/* --- Panels: the one container in the product. ---------------------------
+   A bounded instrument reading, drawn with a rule and registration ticks,
+   never a soft floating card. Panels do not nest. */
+.delta-app .panel {
+	position: relative;
+	background-color: var(--ink-panel);
+	border: 1px solid var(--rule-strong);
+}
+
+.delta-app .panel-inset {
+	background-color: var(--ink-raised);
+	border: 1px solid var(--rule);
+}
+
+/* Corner registration marks, the way a real terminal panel is drawn. */
+.delta-app .ticks::before,
+.delta-app .ticks::after {
+	content: "";
+	position: absolute;
+	width: 7px;
+	height: 7px;
+	pointer-events: none;
+	border-color: var(--phos);
+	opacity: 0.55;
+}
+.delta-app .ticks::before {
+	top: -1px;
+	left: -1px;
+	border-top: 1px solid;
+	border-left: 1px solid;
+}
+.delta-app .ticks::after {
+	bottom: -1px;
+	right: -1px;
+	border-bottom: 1px solid;
+	border-right: 1px solid;
+}
+
+/* Diagonal hatch — the plotter fill a terminal uses for "nothing here". */
+.delta-app .hatch {
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(49, 217, 106, 0.07) 0px,
+		rgba(49, 217, 106, 0.07) 1px,
+		transparent 1px,
+		transparent 7px
+	);
+}
+
+/* --- Data rows ------------------------------------------------------------ */
+.delta-app .data-row {
+	border-bottom: 1px solid var(--rule);
+	transition: background-color 120ms ease-out;
+}
+.delta-app .data-row:last-child {
+	border-bottom: 0;
+}
+.delta-app .data-row:hover {
+	background-color: rgba(49, 217, 106, 0.05);
+}
+
+/* --- Status lamp: two-state, like a real panel indicator. ----------------- */
+.delta-app .lamp-on {
+	animation: app-lamp 2.4s steps(2, end) infinite;
+}
+
+@keyframes app-lamp {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.45;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.delta-app .lamp-on {
+		animation: none;
+	}
+	.delta-app .animate-marquee-left,
+	.delta-app .animate-marquee-right,
+	.delta-app .animate-marquee-left-slow {
+		animation: none;
+	}
+}
+
+/* ==========================================================================
    TERMINAL LAYER — Delta landing page only.
    Scoped under .delta-term so the daisyUI "forest" theme and the app's other
    surfaces are untouched. See the direction contract in index.html.
@@ -74,13 +229,12 @@ html {
 	-webkit-font-smoothing: antialiased;
 }
 
-/* The global outline reset above is an accessibility hazard. Restore a real,
-   in-world focus ring on this surface. !important is required to win. */
+/* The global ring already covers this surface; these add the in-world tint. */
 .delta-term a:focus-visible,
 .delta-term button:focus-visible,
 .delta-term [tabindex]:focus-visible {
-	outline: 2px solid var(--phos) !important;
-	outline-offset: 2px !important;
+	outline: 2px solid var(--phos);
+	outline-offset: 2px;
 	background-color: rgba(49, 217, 106, 0.14);
 }
 

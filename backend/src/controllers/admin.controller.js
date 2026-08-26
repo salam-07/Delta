@@ -233,6 +233,32 @@ export const deleteDevelopment = async (req, res) => {
     }
 };
 
+// Administrators see every development, draft or published. The participant
+// endpoints in market.controller.js are filtered to posted only, so the admin
+// portal reads its list and detail views from here.
+export const showDevelopments = async (req, res) => {
+    try {
+        const devs = await Development.find({}).sort({ createdAt: -1 }).lean();
+        res.status(200).json(devs);
+    } catch (error) {
+        console.error("Error in showDevelopments controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const showDevelopment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const dev = await Development.findById(id).lean();
+        if (!dev) return res.status(404).json({ message: "Development not found" });
+
+        res.status(200).json(dev);
+    } catch (error) {
+        console.error("Error in showDevelopment controller", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 export const postDevelopment = async (req, res) => {
     try {
         const { id } = req.params;

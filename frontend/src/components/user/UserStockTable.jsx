@@ -1,194 +1,186 @@
 import { useState, useEffect } from "react";
-import { RefreshCcw, ShoppingCart, TrendingUp } from "lucide-react";
+import { Landmark, RefreshCcw } from "lucide-react";
 import { useMarketStore } from "../../store/useMarketStore";
 import { useTradeStore } from "../../store/useTradeStore";
+import { Panel, PanelHeader } from "../ui/Panel";
+import { Button } from "../ui/Button";
+import { Change } from "../ui/Readout";
+import { EmptyState, SkeletonRows } from "../ui/Feedback";
+import { InlineNumberField } from "../ui/Field";
+import { money, priceChange } from "../../lib/format";
 
-const UserStockTable = ({
-    showRefreshButton = true,
-    title = "Market Stocks"
-}) => {
+/**
+ * The market board: every listed stock, its live price, its move against the
+ * open, and the controls to trade it.
+ *
+ * Below `md` the table becomes stacked rows — a five-column trading grid is
+ * unusable at 375px, and participants trade from phones.
+ */
+const UserStockTable = ({ showRefreshButton = true, title = "Market" }) => {
     const [shareAmounts, setShareAmounts] = useState({});
+    const [pending, setPending] = useState(null);
 
-    // Get data and actions from stores
-    const {
-        stocks,
-        isStocksLoading,
-        fetchAllStocks
-    } = useMarketStore();
+    const { stocks, isStocksLoading, fetchAllStocks } = useMarketStore();
+    const { buyStock, sellStock, isTrading } = useTradeStore();
 
-    const {
-        buyStock,
-        sellStock,
-        isTrading
-    } = useTradeStore();
-
-    // Fetch stocks on component mount
     useEffect(() => {
         fetchAllStocks();
     }, [fetchAllStocks]);
 
-    // Simple function to calculate price change using openingPrice and current price
-    const calculatePriceChange = (stock) => {
-        const openingPrice = parseFloat(stock.openingPrice) || 0;
-        const currentPrice = parseFloat(stock.price) || 0;
+    const getShareAmount = (stockId) => shareAmounts[stockId] ?? 1;
 
-        const priceChange = currentPrice - openingPrice;
-        const percentageChange = openingPrice > 0 ? ((priceChange / openingPrice) * 100) : 0;
+    const handleShareAmountChange = (stockId, value) =>
+        setShareAmounts((prev) => ({ ...prev, [stockId]: value }));
 
-        return {
-            priceChange: priceChange.toFixed(2),
-            percentageChange: percentageChange.toFixed(2),
-            isPositive: priceChange >= 0
-        };
-    };
-
-    // Function to render price change
-    const renderPriceChange = (stock) => {
-        const { priceChange, percentageChange, isPositive } = calculatePriceChange(stock);
-        const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
-        const sign = isPositive ? '+' : '';
-
-        return (
-            <div className={`${colorClass} text-sm`}>
-                <div>{sign}${priceChange}</div>
-                <div>({sign}{percentageChange}%)</div>
-            </div>
-        );
-    };
-
-    const handleShareAmountChange = (stockId, value) => {
-        setShareAmounts(prev => ({
-            ...prev,
-            [stockId]: value
-        }));
-    };
-
-    const getShareAmount = (stockId) => {
-        return shareAmounts[stockId] || 1; // Default to 1 share
-    };
-
-    const handleBuyStock = async (ticker, stockId) => {
+    /**
+     * Trading is serialised — a participant may not fire two orders at once —
+     * but only the row that was clicked shows the busy state. `isTrading` alone
+     * spun every button on the board simultaneously.
+     */
+    const handleTrade = async (side, ticker, stockId) => {
         const shares = getShareAmount(stockId);
-        if (shares > 0) {
-            await buyStock(ticker, shares);
+        if (!(shares > 0)) return;
+        setPending({ stockId, side });
+        try {
+            await (side === "buy" ? buyStock : sellStock)(ticker, shares);
+        } finally {
+            setPending(null);
         }
     };
 
-    const handleSellStock = async (ticker, stockId) => {
-        const shares = getShareAmount(stockId);
-        if (shares > 0) {
-            await sellStock(ticker, shares);
-        }
-    };
+    const isPending = (stockId, side) => pending?.stockId === stockId && pending?.side === side;
+
+    const tradeControls = (stock, layout) => (
+        <div className={`flex items-center gap-1.5 ${layout === "row" ? "justify-center" : ""}`}>
+            <Button
+                size="sm"
+                variant="buy"
+                className="min-w-[4.25rem]"
+                onClick={() => handleTrade("buy", stock.ticker, stock._id)}
+                disabled={isTrading}
+                loading={isPending(stock._id, "buy")}
+            >
+                Buy
+            </Button>
+            <InlineNumberField
+                value={getShareAmount(stock._id)}
+                onChange={(e) => handleShareAmountChange(stock._id, parseInt(e.target.value, 10) || 1)}
+                min="1"
+                step="1"
+                className="w-16"
+                aria-label={`Shares of ${stock.ticker} to trade`}
+            />
+            <Button
+                size="sm"
+                variant="sell"
+                className="min-w-[4.25rem]"
+                onClick={() => handleTrade("sell", stock.ticker, stock._id)}
+                disabled={isTrading}
+                loading={isPending(stock._id, "sell")}
+            >
+                Sell
+            </Button>
+        </div>
+    );
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-white">{title}</h3>
-                {showRefreshButton && (
-                    <button
-                        onClick={fetchAllStocks}
-                        disabled={isStocksLoading}
-                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors hover:bg-gray-800/50"
-                    >
-                        <RefreshCcw size={16} className={isStocksLoading ? "animate-spin" : ""} />
+        <Panel ticks>
+            <PanelHeader label={title}>
+                {showRefreshButton ? (
+                    <Button size="sm" variant="ghost" onClick={fetchAllStocks} disabled={isStocksLoading}>
+                        <RefreshCcw
+                            className={`size-3 shrink-0 ${isStocksLoading ? "animate-spin" : ""}`}
+                            aria-hidden="true"
+                        />
                         Refresh
-                    </button>
-                )}
-            </div>
+                    </Button>
+                ) : null}
+            </PanelHeader>
 
             {isStocksLoading && stocks.length === 0 ? (
-                <div className="text-gray-400 text-center py-8">
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        Loading stocks...
-                    </div>
-                </div>
+                <SkeletonRows rows={6} />
             ) : stocks.length === 0 ? (
-                <div className="text-gray-400 text-center py-8">
-                    No stocks available for trading.
-                </div>
+                <EmptyState
+                    icon={Landmark}
+                    label="No stocks listed"
+                    description="The market has no listings yet. An administrator lists stocks before trading opens."
+                />
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-gray-700">
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Ticker</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Company Name</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Current Price</th>
-                                <th className="text-left text-gray-300 font-medium py-3 px-4">Change</th>
-                                <th className="text-center text-gray-300 font-medium py-3 px-4">Trade Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stocks.map((stock) => (
-                                <tr key={stock._id} className="border-b border-gray-800 hover:bg-primary/5 transition-colors">
-                                    <td className="py-4 px-4">
-                                        <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded text-sm font-mono">
+                <>
+                    {/* Table — md and up */}
+                    <div className="hidden md:block">
+                        <table className="w-full">
+                            <caption className="sr-only">Listed stocks with live prices and trade controls</caption>
+                            <thead>
+                                <tr className="border-b border-phosphor/20 bg-ink-raised">
+                                    <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                        Ticker
+                                    </th>
+                                    <th scope="col" className="px-4 py-2 text-left font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                        Name
+                                    </th>
+                                    <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                        Price
+                                    </th>
+                                    <th scope="col" className="px-4 py-2 text-right font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                        Change
+                                    </th>
+                                    <th scope="col" className="px-4 py-2 text-center font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                        Order
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {stocks.map((stock) => {
+                                    const change = priceChange(stock);
+                                    return (
+                                        <tr key={stock._id} className="data-row">
+                                            <td className="px-4 py-3">
+                                                <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
+                                                    {stock.ticker}
+                                                </span>
+                                            </td>
+                                            <td className="max-w-[16rem] truncate px-4 py-3 font-term text-sm text-phosphor-bright">
+                                                {stock.name}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                {money(stock.price)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-xs">
+                                                <Change absolute={change.absolute} percent={change.percent} />
+                                            </td>
+                                            <td className="px-4 py-3">{tradeControls(stock, "row")}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Stacked rows — below md */}
+                    <ul className="md:hidden">
+                        {stocks.map((stock) => {
+                            const change = priceChange(stock);
+                            return (
+                                <li key={stock._id} className="border-b border-phosphor/15 px-4 py-3.5 last:border-b-0">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <span className="border border-phosphor/30 bg-phosphor/10 px-1.5 py-0.5 font-term text-xs text-phosphor">
                                             {stock.ticker}
                                         </span>
-                                    </td>
-                                    <td className="py-4 px-4 text-white">
-                                        {stock.name}
-                                    </td>
-                                    <td className="py-4 px-4 text-left">
-                                        <span className="text-green-400 font-semibold">
-                                            ${stock.price.toFixed(2)}
-                                        </span>
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        {renderPriceChange(stock)}
-                                    </td>
-                                    <td className="py-4 px-4">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <button
-                                                className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white p-2 rounded text-sm font-semibold min-w-[60px] transition-colors flex items-center justify-center gap-1"
-                                                title={`Buy ${getShareAmount(stock._id)} shares`}
-                                                onClick={() => handleBuyStock(stock.ticker, stock._id)}
-                                                disabled={isTrading}
-                                            >
-                                                {isTrading ? (
-                                                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <ShoppingCart size={14} />
-                                                        Buy
-                                                    </>
-                                                )}
-                                            </button>
-                                            <input
-                                                type="number"
-                                                value={getShareAmount(stock._id)}
-                                                onChange={(e) => handleShareAmountChange(stock._id, parseInt(e.target.value) || 1)}
-                                                className="bg-transparent w-20 rounded px-2 py-2 text-white text-sm text-center focus:border-green-500 focus:outline-none"
-                                                min="1"
-                                                step="1"
-                                                placeholder="1"
-                                            />
-                                            <button
-                                                className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white p-2 rounded text-sm font-semibold min-w-[60px] transition-colors flex items-center justify-center gap-1"
-                                                title={`Sell ${getShareAmount(stock._id)} shares`}
-                                                onClick={() => handleSellStock(stock.ticker, stock._id)}
-                                                disabled={isTrading}
-                                            >
-                                                {isTrading ? (
-                                                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <TrendingUp size={14} />
-                                                        Sell
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        <span className="font-term text-base text-phosphor-bright">{money(stock.price)}</span>
+                                    </div>
+                                    <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                                        <span className="min-w-0 truncate font-term text-xs text-phosphor-mid">{stock.name}</span>
+                                        <Change absolute={change.absolute} percent={change.percent} className="shrink-0 text-xs" />
+                                    </div>
+                                    <div className="mt-3">{tradeControls(stock, "stack")}</div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </>
             )}
-        </div>
+        </Panel>
     );
 };
 

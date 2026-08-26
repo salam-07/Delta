@@ -1,363 +1,331 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Users, DollarSign, TrendingUp, Eye, Search, RefreshCw } from 'lucide-react';
-import AdminLayout from '../../layouts/AdminLayout';
-import { useAdminStore } from '../../store/useAdminStore';
-import { useMarketStore } from '../../store/useMarketStore';
-import { useSocketStore } from '../../store/useSocketStore';
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, RefreshCw, Users } from "lucide-react";
+import AdminLayout from "../../layouts/AdminLayout";
+import { useAdminStore } from "../../store/useAdminStore";
+import { useMarketStore } from "../../store/useMarketStore";
+import { useSocketStore } from "../../store/useSocketStore";
+import { Panel, PanelHeader } from "../../components/ui/Panel";
+import { Button } from "../../components/ui/Button";
+import { SelectField, TextField } from "../../components/ui/Field";
+import { EmptyState, Lamp, SkeletonRows } from "../../components/ui/Feedback";
+import { Readout, ReadoutStrip } from "../../components/ui/Readout";
+import { count, initial, money } from "../../lib/format";
 
+const PAGE = 20;
+
+const STARTING_CASH = 3000;
+
+const COLUMNS = [
+    { key: "fullName", label: "Participant", align: "left" },
+    { key: "email", label: "Email", align: "left" },
+    { key: "balance", label: "Cash", align: "right" },
+    { key: "portfolioValue", label: "Holdings", align: "right" },
+    { key: "totalAssets", label: "Net worth", align: "right" },
+    { key: "holdingsCount", label: "Positions", align: "right" },
+];
+
+/**
+ * The participant roster, ranked by net worth.
+ *
+ * Sorting lives in the column headers on wide screens and in a select below
+ * them, so the same state is never presented twice at one breakpoint. The
+ * headers were `<th onClick>` before — unreachable by keyboard, with the sort
+ * direction shown as a bare Unicode arrow and no `aria-sort` for a screen
+ * reader to read.
+ */
 const AdminUsers = () => {
     const { users, isUsersLoading, getAllUsers } = useAdminStore();
     const { stocks, fetchAllStocks } = useMarketStore();
     const { onlineUsers } = useSocketStore();
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('totalAssets'); // email, name, balance, totalAssets
-    const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
-    const [onlineFilter, setOnlineFilter] = useState('all'); // all, online, offline
-    const [visibleUsers, setVisibleUsers] = useState(20); // For lazy loading
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("totalAssets");
+    const [sortOrder, setSortOrder] = useState("desc");
+    const [presence, setPresence] = useState("all");
+    const [visible, setVisible] = useState(PAGE);
 
     useEffect(() => {
         getAllUsers();
         fetchAllStocks();
     }, [getAllUsers, fetchAllStocks]);
 
-    // Calculate total assets for each user (balance + portfolio value)
-    const enrichedUsers = useMemo(() => {
-        if (!users.length || !stocks.length) return [];
+    // `onlineUsers` was missing from these dependencies, so presence froze at
+    // whatever it happened to be when the roster first loaded. The empty-stocks
+    // guard was also here, which blanked the whole roster before any stock was
+    // listed — a participant with no holdings still has cash and a name.
+    const roster = useMemo(
+        () =>
+            users.map((user) => {
+                const portfolioValue = (user.portfolio ?? []).reduce((total, holding) => {
+                    const stock = stocks.find((candidate) => candidate.ticker === holding.ticker);
+                    const price = stock ? Number(stock.price) : 0;
+                    const amount = Number(holding.amount) || 0;
+                    return total + price * amount;
+                }, 0);
 
-        return users.map(user => {
-            // Calculate portfolio value
-            const portfolioValue = user.portfolio?.reduce((total, holding) => {
-                const stock = stocks.find(s => s.ticker === holding.ticker);
-                const currentPrice = stock ? parseFloat(stock.price) : 0;
-                const quantity = parseFloat(holding.amount) || 0;
-                return total + (currentPrice * quantity);
-            }, 0) || 0;
+                const balance = Number(user.balance) || 0;
 
-            const totalAssets = (user.balance || 0) + portfolioValue;
+                return {
+                    ...user,
+                    portfolioValue,
+                    totalAssets: balance + portfolioValue,
+                    holdingsCount: (user.portfolio ?? []).length,
+                    isOnline: onlineUsers.includes(user._id),
+                };
+            }),
+        [users, stocks, onlineUsers]
+    );
 
-            return {
-                ...user,
-                portfolioValue,
-                totalAssets,
-                holdingsCount: user.portfolio?.length || 0,
-                isOnline: onlineUsers.includes(user._id)
-            };
-        });
-    }, [users, stocks]);
+    const shown = useMemo(() => {
+        const needle = query.trim().toLowerCase();
 
-    // Filter and sort users
-    const filteredAndSortedUsers = useMemo(() => {
-        let filtered = enrichedUsers.filter(user =>
-            user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        // Apply online status filter
-        if (onlineFilter === 'online') {
-            filtered = filtered.filter(user => user.isOnline);
-        } else if (onlineFilter === 'offline') {
-            filtered = filtered.filter(user => !user.isOnline);
-        }
-
-        // Sort users
-        filtered.sort((a, b) => {
-            let aValue = a[sortBy];
-            let bValue = b[sortBy];
-
-            if (typeof aValue === 'string') {
-                aValue = aValue.toLowerCase();
-                bValue = bValue.toLowerCase();
-            }
-
-            if (sortOrder === 'asc') {
-                return aValue > bValue ? 1 : -1;
-            } else {
-                return aValue < bValue ? 1 : -1;
-            }
+        const filtered = roster.filter((user) => {
+            if (presence === "online" && !user.isOnline) return false;
+            if (presence === "offline" && user.isOnline) return false;
+            if (!needle) return true;
+            return (
+                user.fullName?.toLowerCase().includes(needle) || user.email?.toLowerCase().includes(needle)
+            );
         });
 
-        return filtered;
-    }, [enrichedUsers, searchTerm, sortBy, sortOrder, onlineFilter]);
+        return [...filtered].sort((a, b) => {
+            const left = a[sortBy];
+            const right = b[sortBy];
+            const comparison =
+                typeof left === "string"
+                    ? left.localeCompare(right ?? "", undefined, { sensitivity: "base" })
+                    : (left ?? 0) - (right ?? 0);
+            return sortOrder === "asc" ? comparison : -comparison;
+        });
+    }, [roster, query, sortBy, sortOrder, presence]);
 
-    const handleSort = (column) => {
-        if (sortBy === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    const toggleSort = (key) => {
+        if (sortBy === key) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
-            setSortBy(column);
-            setSortOrder('desc');
+            setSortBy(key);
+            setSortOrder(key === "fullName" || key === "email" ? "asc" : "desc");
         }
     };
 
-    const loadMoreUsers = () => {
-        setVisibleUsers(prev => prev + 20);
-    };
+    const ariaSort = (key) => (sortBy !== key ? "none" : sortOrder === "asc" ? "ascending" : "descending");
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount || 0);
-    };
+    const SortIcon = sortOrder === "asc" ? ArrowUp : ArrowDown;
 
-    const getSortIcon = (column) => {
-        if (sortBy !== column) return null;
-        return sortOrder === 'asc' ? '↑' : '↓';
+    const online = roster.filter((user) => user.isOnline).length;
+    const totalAssets = roster.reduce((sum, user) => sum + user.totalAssets, 0);
+    const totalCash = roster.reduce((sum, user) => sum + (Number(user.balance) || 0), 0);
+
+    const refresh = () => {
+        getAllUsers();
+        fetchAllStocks();
     };
 
     return (
-        <AdminLayout title="Users Management">
-            <div className="space-y-4">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <Users className="text-green-400" size={24} />
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Users Management</h1>
-                            <p className="text-xs text-gray-400">
-                                {filteredAndSortedUsers.length} users •
-                                {onlineFilter === 'all' && (
-                                    <> {filteredAndSortedUsers.filter(u => u.isOnline).length} online, {filteredAndSortedUsers.filter(u => !u.isOnline).length} offline • </>
-                                )}
-                                Total Assets: {formatCurrency(
-                                    filteredAndSortedUsers.reduce((sum, user) => sum + user.totalAssets, 0)
-                                )}
-                            </p>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => {
-                            getAllUsers();
-                            fetchAllStocks();
-                        }}
-                        disabled={isUsersLoading}
-                        className="flex items-center gap-2  text-white px-3 py-2 rounded-lg text-xs transition-colors"
-                    >
-                        <RefreshCw size={14} className={isUsersLoading ? "animate-spin" : ""} />
-                        Refresh
-                    </button>
-                </div>
-
-                {/* Search and Controls */}
-                <div className="flex gap-3 items-center">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
-                        <input
-                            type="text"
-                            placeholder="Search users by name or email..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-transparent border border-gray-700 rounded-lg text-white text-xs focus:border-green-500 focus:outline-none"
+        <AdminLayout
+            title="Participants"
+            actions={
+                <Button size="sm" variant="ghost" onClick={refresh} disabled={isUsersLoading}>
+                    <RefreshCw
+                        className={`size-3 shrink-0 ${isUsersLoading ? "animate-spin" : ""}`}
+                        aria-hidden="true"
+                    />
+                    Refresh
+                </Button>
+            }
+        >
+            <div className="space-y-6">
+                <Panel ticks>
+                    <PanelHeader label="Roster" />
+                    <ReadoutStrip cols={4}>
+                        <Readout label="Participants" value={count(roster.length)} />
+                        <Readout label="Online now" value={count(online)} tone="accent" />
+                        <Readout label="Cash held" value={money(totalCash)} />
+                        <Readout
+                            label="Net worth"
+                            value={money(totalAssets)}
+                            note={`Started from ${money(roster.length * STARTING_CASH)}`}
                         />
+                    </ReadoutStrip>
+                </Panel>
+
+                <Panel>
+                    <PanelHeader label={`${shown.length} of ${roster.length} shown`} />
+
+                    <div className="grid grid-cols-1 gap-4 border-b border-phosphor/15 px-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <TextField
+                            label="Search"
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Name or email"
+                            autoComplete="off"
+                        />
+                        <SelectField label="Presence" value={presence} onChange={(e) => setPresence(e.target.value)}>
+                            <option value="all">All participants</option>
+                            <option value="online">Online only</option>
+                            <option value="offline">Offline only</option>
+                        </SelectField>
+                        <SelectField
+                            label="Sort by"
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            containerClassName="lg:hidden"
+                        >
+                            {COLUMNS.map((column) => (
+                                <option key={column.key} value={column.key}>
+                                    {column.label}
+                                </option>
+                            ))}
+                        </SelectField>
                     </div>
 
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="bg-black/90 rounded-lg px-3 py-2 text-white text-xs focus:border-green-500 focus:outline-none"
-                    >
-                        <option value="totalAssets">Sort by Total Assets</option>
-                        <option value="balance">Sort by Balance</option>
-                        <option value="portfolioValue">Sort by Portfolio Value</option>
-                        <option value="name">Sort by Name</option>
-                        <option value="email">Sort by Email</option>
-                    </select>
-
-                    <select
-                        value={onlineFilter}
-                        onChange={(e) => setOnlineFilter(e.target.value)}
-                        className="bg-black/90 rounded-lg px-3 py-2 text-white text-xs focus:border-green-500 focus:outline-none"
-                    >
-                        <option value="all">All Users</option>
-                        <option value="online">Online Only</option>
-                        <option value="offline">Offline Only</option>
-                    </select>
-                </div>
-
-                {/* Users Table */}
-                <div className="bg-transparent overflow-hidden">
-                    {isUsersLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="ml-2 text-gray-400 text-sm">Loading users...</span>
-                        </div>
+                    {isUsersLoading && roster.length === 0 ? (
+                        <SkeletonRows rows={8} />
+                    ) : shown.length === 0 ? (
+                        <EmptyState
+                            icon={Users}
+                            label={roster.length === 0 ? "No participants" : "Nothing matches"}
+                            description={
+                                roster.length === 0
+                                    ? "Nobody has signed up yet. Participants appear here as they register."
+                                    : "No participant matches this search and presence filter."
+                            }
+                            action={
+                                roster.length > 0 ? (
+                                    <Button
+                                        variant="default"
+                                        onClick={() => {
+                                            setQuery("");
+                                            setPresence("all");
+                                        }}
+                                    >
+                                        Clear filters
+                                    </Button>
+                                ) : null
+                            }
+                        />
                     ) : (
                         <>
-                            {/* Table Header */}
-                            {filteredAndSortedUsers.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                                    <h3 className="text-sm font-medium text-gray-300 mb-2">No Users Found</h3>
-                                    <p className="text-xs text-gray-500">
-                                        {searchTerm ? 'Try adjusting your search criteria' : 'No users in the system yet'}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[800px] text-xs">
-                                        <thead className="bg-primary/10 border-b border-gray-700">
-                                            <tr>
+                            {/* Table — lg and up */}
+                            <div className="hidden overflow-x-auto lg:block">
+                                <table className="w-full min-w-[52rem]">
+                                    <caption className="sr-only">
+                                        Participants with cash, holdings value and net worth
+                                    </caption>
+                                    <thead>
+                                        <tr className="border-b border-phosphor/20 bg-ink-raised">
+                                            {COLUMNS.map((column) => (
                                                 <th
-                                                    className="px-4 py-3 text-left font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                                                    onClick={() => handleSort('name')}
+                                                    key={column.key}
+                                                    scope="col"
+                                                    aria-sort={ariaSort(column.key)}
+                                                    className={`px-4 py-0 ${column.align === "right" ? "text-right" : "text-left"}`}
                                                 >
-                                                    <div className="flex items-center gap-1">
-                                                        User Info {getSortIcon('name')}
-                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSort(column.key)}
+                                                        className={`flex w-full items-center gap-1.5 py-2 font-term text-[10px]
+                                                            uppercase tracking-label transition-colors hover:text-phosphor
+                                                            ${column.align === "right" ? "justify-end" : "justify-start"}
+                                                            ${sortBy === column.key ? "text-phosphor" : "text-phosphor-mid"}`}
+                                                    >
+                                                        {column.label}
+                                                        {sortBy === column.key ? (
+                                                            <SortIcon className="size-3 shrink-0" aria-hidden="true" />
+                                                        ) : null}
+                                                    </button>
                                                 </th>
-                                                <th
-                                                    className="px-4 py-3 text-left font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                                                    onClick={() => handleSort('email')}
-                                                >
-                                                    <div className="flex items-center gap-1">
-                                                        Email {getSortIcon('email')}
-                                                    </div>
-                                                </th>
-                                                <th
-                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                                                    onClick={() => handleSort('balance')}
-                                                >
-                                                    <div className="flex items-center gap-1 justify-end">
-                                                        Balance {getSortIcon('balance')}
-                                                    </div>
-                                                </th>
-                                                <th
-                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                                                    onClick={() => handleSort('portfolioValue')}
-                                                >
-                                                    <div className="flex items-center gap-1 justify-end">
-                                                        Portfolio {getSortIcon('portfolioValue')}
-                                                    </div>
-                                                </th>
-                                                <th
-                                                    className="px-4 py-3 text-right font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                                                    onClick={() => handleSort('totalAssets')}
-                                                >
-                                                    <div className="flex items-center gap-1 justify-end">
-                                                        Total Assets {getSortIcon('totalAssets')}
-                                                    </div>
-                                                </th>
-                                                <th className="px-4 py-3 text-center font-semibold text-gray-300 uppercase tracking-wider">
-                                                    Holdings
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-800">
-                                            {filteredAndSortedUsers.slice(0, visibleUsers).map((user) => (
-                                                <tr key={user._id} className="hover:bg-primary/5 transition-colors">
-                                                    {/* User Info */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="text-xs font-medium text-white">
-                                                                {user.fullName || 'N/A'}
-                                                            </div>
-                                                            <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-400' : 'bg-gray-500'}`} title={user.isOnline ? 'Online' : 'Offline'}>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-xs text-gray-400">
-                                                            ID: {user._id.slice(-8)} • {user.isOnline ? 'Online' : 'Offline'}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Email */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs text-gray-300 max-w-[200px] truncate">
-                                                            {user.email}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Balance */}
-                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                                                        <div className="text-xs font-medium text-white">
-                                                            {formatCurrency(user.balance)}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Portfolio Value */}
-                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                                                        <div className="text-xs font-medium text-white">
-                                                            {formatCurrency(user.portfolioValue)}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Total Assets */}
-                                                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                                                        <div className="text-xs font-bold text-green-400">
-                                                            {formatCurrency(user.totalAssets)}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Holdings Count */}
-                                                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                                                        <div className="text-xs text-gray-400">
-                                                            {user.holdingsCount}
-                                                        </div>
-                                                    </td>
-                                                </tr>
                                             ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {shown.slice(0, visible).map((user) => (
+                                            <tr key={user._id} className="data-row">
+                                                <td className="px-4 py-3">
+                                                    <span className="flex items-center gap-2.5">
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="flex size-6 shrink-0 items-center justify-center border border-phosphor/25 bg-phosphor/10 font-term text-[10px] text-phosphor"
+                                                        >
+                                                            {initial(user.fullName)}
+                                                        </span>
+                                                        <span className="font-term text-sm text-phosphor-bright">
+                                                            {user.fullName || "Unnamed"}
+                                                        </span>
+                                                        <Lamp on={user.isOnline} />
+                                                        <span className="sr-only">
+                                                            {user.isOnline ? "Online" : "Offline"}
+                                                        </span>
+                                                    </span>
+                                                </td>
+                                                <td className="max-w-[15rem] truncate px-4 py-3 font-term text-xs text-phosphor-mid">
+                                                    {user.email}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                    {money(user.balance)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor-bright">
+                                                    {money(user.portfolioValue)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor">
+                                                    {money(user.totalAssets)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-term text-sm text-phosphor-mid">
+                                                    {count(user.holdingsCount)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
 
-                            {/* Load More Button */}
-                            {visibleUsers < filteredAndSortedUsers.length && (
-                                <div className="border-t border-gray-700 p-4 text-center">
-                                    <button
-                                        onClick={loadMoreUsers}
-                                        className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs transition-colors"
-                                    >
-                                        Load More ({filteredAndSortedUsers.length - visibleUsers} remaining)
-                                    </button>
+                            {/* Stacked rows — below lg */}
+                            <ul className="lg:hidden">
+                                {shown.slice(0, visible).map((user) => (
+                                    <li key={user._id} className="border-b border-phosphor/15 px-4 py-3.5 last:border-b-0">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="flex min-w-0 items-center gap-2">
+                                                <Lamp on={user.isOnline} />
+                                                <span className="truncate font-term text-sm text-phosphor-bright">
+                                                    {user.fullName || "Unnamed"}
+                                                </span>
+                                            </span>
+                                            <span className="shrink-0 font-term text-sm text-phosphor">
+                                                {money(user.totalAssets)}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 truncate font-term text-[11px] text-phosphor-mid">
+                                            {user.email}
+                                        </p>
+                                        <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 font-term text-[11px] text-phosphor-mid">
+                                            <span className="flex gap-1.5">
+                                                <dt>Cash</dt>
+                                                <dd className="text-phosphor-bright">{money(user.balance)}</dd>
+                                            </span>
+                                            <span className="flex gap-1.5">
+                                                <dt>Holdings</dt>
+                                                <dd className="text-phosphor-bright">{money(user.portfolioValue)}</dd>
+                                            </span>
+                                            <span className="flex gap-1.5">
+                                                <dt>Positions</dt>
+                                                <dd className="text-phosphor-bright">{count(user.holdingsCount)}</dd>
+                                            </span>
+                                        </dl>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {visible < shown.length ? (
+                                <div className="border-t border-phosphor/20 px-4 py-3">
+                                    <Button variant="default" size="sm" onClick={() => setVisible((n) => n + PAGE)}>
+                                        Show {Math.min(PAGE, shown.length - visible)} more
+                                    </Button>
                                 </div>
-                            )}
+                            ) : null}
                         </>
                     )}
-                </div>
-
-                {/* Summary Stats */}
-                <div className="px-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-gray-700">
-                    <div className="rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Users className="text-green-400" size={16} />
-                            <span className="text-xs font-medium text-gray-400">Total Users</span>
-                        </div>
-                        <div className="text-xl font-bold text-white">{enrichedUsers.length}</div>
-                    </div>
-
-                    <div className=" rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="text-green-400" size={16} />
-                            <span className="text-xs font-medium text-gray-400">Total Balance</span>
-                        </div>
-                        <div className="text-lg font-bold text-white-400">
-                            {formatCurrency(enrichedUsers.reduce((sum, user) => sum + (user.balance || 0), 0))}
-                        </div>
-                    </div>
-
-                    <div className="rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <TrendingUp className="text-green-400" size={16} />
-                            <span className="text-xs font-medium text-gray-400">Total Portfolio</span>
-                        </div>
-                        <div className="text-lg font-bold text-white-400">
-                            {formatCurrency(enrichedUsers.reduce((sum, user) => sum + user.portfolioValue, 0))}
-                        </div>
-                    </div>
-
-                    <div className="rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Eye className="text-green-400" size={16} />
-                            <span className="text-xs font-medium text-gray-400">Total Assets</span>
-                        </div>
-                        <div className="text-lg font-bold text-green-400">
-                            {formatCurrency(enrichedUsers.reduce((sum, user) => sum + user.totalAssets, 0))}
-                        </div>
-                    </div>
-                </div>
+                </Panel>
             </div>
         </AdminLayout>
     );

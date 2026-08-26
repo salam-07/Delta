@@ -1,182 +1,147 @@
-import { RefreshCw, Edit, Trash2, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ExternalLink, Newspaper, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { useAdminStore } from "../../store/useAdminStore";
+import { Panel, PanelHeader } from "../ui/Panel";
+import { Button } from "../ui/Button";
+import { EmptyState, SkeletonRows, StatusPill } from "../ui/Feedback";
+import { dateTime, money } from "../../lib/format";
 
-const DevTable = ({
+/**
+ * The development queue: drafts and published items in one list, newest first.
+ *
+ * A list, not the four-across card grid this was. An administrator scans for
+ * one item to publish or fix, and every action is a visible control: the row's
+ * buttons used to be `opacity-0 group-hover:opacity-100`, which put them out of
+ * reach of the keyboard and of touch entirely.
+ *
+ * The status is a fact, stated. Publishing is a labelled button beside it — the
+ * badge itself used to be the toggle, a `<span>` with a hover lift.
+ */
+const AdminDevTable = ({
     devs = [],
     isLoading = false,
-    onRefresh = () => { },
+    onRefresh = null,
     onToggleStatus = null,
     onEdit = null,
     onDelete = null,
     showRefreshButton = true,
-    title = "Developments"
+    title = "Developments",
+    emptyAction = null,
 }) => {
-    // Helper function to truncate content to first few lines
-    const truncateContent = (content, maxLength = 150) => {
+    const { postingDevId, deletingDevId } = useAdminStore();
+
+    const lede = (content, maxLength = 200) => {
         if (!content) return "";
         if (content.length <= maxLength) return content;
-
-        // Find the last space before maxLength to avoid cutting words
-        const truncated = content.substr(0, maxLength);
-        const lastSpace = truncated.lastIndexOf(' ');
-        return lastSpace > 0 ? truncated.substr(0, lastSpace) + "..." : truncated + "...";
-    };
-
-    // Helper function to format date
-    const formatDate = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-        });
+        const cut = content.slice(0, maxLength);
+        const lastSpace = cut.lastIndexOf(" ");
+        return `${lastSpace > 0 ? cut.slice(0, lastSpace) : cut}…`;
     };
 
     return (
-        <div className="p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-white">{title}</h3>
-                {showRefreshButton && (
-                    <button
-                        onClick={onRefresh}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg transition-colors hover:bg-gray-800/50"
-                    >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+        <Panel>
+            <PanelHeader label={title}>
+                {showRefreshButton && onRefresh ? (
+                    <Button size="sm" variant="ghost" onClick={onRefresh} disabled={isLoading}>
+                        <RefreshCw className={`size-3 shrink-0 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
                         Refresh
-                    </button>
-                )}
-            </div>
+                    </Button>
+                ) : null}
+            </PanelHeader>
 
-            {/* Loading State */}
             {isLoading && devs.length === 0 ? (
-                <div className="text-gray-400 text-center py-12">
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                        Loading developments...
-                    </div>
-                </div>
+                <SkeletonRows rows={3} />
             ) : devs.length === 0 ? (
-                /* Empty State */
-                <div className="text-gray-400 text-center py-12">
-                    <div className="rounded-lg p-8">
-                        <h4 className="text-lg font-medium text-gray-300 mb-2">No Developments Found</h4>
-                        <p className="text-gray-500">Create your first development to get started.</p>
-                    </div>
-                </div>
+                <EmptyState
+                    icon={Newspaper}
+                    label="No developments"
+                    description="Developments are the news that moves this market. Draft one, set the prices it should trigger, then publish it to the wire."
+                    action={emptyAction}
+                />
             ) : (
-                /* Responsive Grid */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {devs.map((dev) => (
-                        <div
-                            key={dev._id}
-                            className="backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 hover:border-gray-600/50 transition-all duration-200 group"
-                        >
-                            {/* Header with Actions */}
-                            <div className="flex justify-between items-start mb-3">
-                                {/* Status Badge */}
-                                {dev.posted !== undefined && (
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${dev.posted
-                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                            } ${onToggleStatus ? 'cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200' : ''}`}
-                                        onClick={onToggleStatus ? (e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            onToggleStatus(dev._id, dev.posted ? 'published' : 'draft');
-                                        } : undefined}
-                                        title={onToggleStatus ? `Click to ${dev.posted ? 'mark as draft' : 'publish'}` : undefined}
-                                    >
-                                        {dev.posted ? 'Published' : 'Draft'}
+                <ul>
+                    {devs.map((dev) => {
+                        const moves = dev.stockPriceChanges ?? [];
+                        return (
+                            <li key={dev._id} className="border-b border-phosphor/15 px-4 py-4 last:border-b-0">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                    <StatusPill tone={dev.posted ? "live" : "draft"}>
+                                        {dev.posted ? "Published" : "Draft"}
+                                    </StatusPill>
+                                    <span className="font-term text-[11px] uppercase tracking-label text-signal-cyanDim">
+                                        {dateTime(dev.createdAt ?? dev.updatedAt)}
                                     </span>
-                                )}
+                                </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {/* View/Edit Link */}
+                                <h3 className="mt-2 font-term text-sm leading-snug text-phosphor-bright">
                                     <Link
                                         to={`/admin/developments/${dev._id}`}
-                                        className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                        title="View Details"
+                                        className="transition-colors hover:text-phosphor hover:underline hover:underline-offset-4"
                                     >
-                                        <ExternalLink size={14} />
+                                        {dev.title || "Untitled development"}
                                     </Link>
+                                </h3>
 
-                                    {/* Edit Button */}
-                                    {onEdit && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onEdit(dev);
-                                            }}
-                                            className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
-                                            title="Edit Development"
-                                        >
-                                            <Edit size={14} />
-                                        </button>
-                                    )}
+                                {dev.content ? (
+                                    <p className="mt-1.5 font-term text-xs leading-relaxed text-phosphor-mid">
+                                        {lede(dev.content)}
+                                    </p>
+                                ) : null}
 
-                                    {/* Delete Button */}
-                                    {onDelete && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onDelete(dev._id);
-                                            }}
-                                            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                                            title="Delete Development"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Title */}
-                            <h4 className="text-lg font-semibold text-white mb-3 group-hover:text-green-400 transition-colors line-clamp-2">
-                                {dev.title || "Untitled Development"}
-                            </h4>
-
-                            {/* Content Preview */}
-                            <p className="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-4">
-                                {truncateContent(dev.content)}
-                            </p>
-
-                            {/* Stock Price Changes Indicator */}
-                            {dev.stockPriceChanges && dev.stockPriceChanges.length > 0 && (
-                                <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs">
-                                    <div className="text-yellow-400 font-medium">
-                                        Stock Price Changes ({dev.stockPriceChanges.length})
+                                {moves.length > 0 ? (
+                                    <div className="panel-inset mt-3 px-3 py-2">
+                                        <p className="font-term text-[10px] uppercase tracking-label text-phosphor-mid">
+                                            {dev.posted ? "Prices set on publish" : "Will set on publish"}
+                                        </p>
+                                        <p className="mt-1 font-term text-[11px] text-phosphor">
+                                            {moves
+                                                .map((move) => `${move.ticker} → ${money(move.newPrice)}`)
+                                                .join("   ")}
+                                        </p>
                                     </div>
-                                    <div className="text-gray-400 mt-1">
-                                        {dev.stockPriceChanges.slice(0, 3).map(change => change.ticker).join(", ")}
-                                        {dev.stockPriceChanges.length > 3 && "..."}
-                                    </div>
+                                ) : null}
+
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    {onToggleStatus ? (
+                                        <Button
+                                            size="sm"
+                                            variant={dev.posted ? "default" : "primary"}
+                                            onClick={() => onToggleStatus(dev)}
+                                            loading={postingDevId === dev._id}
+                                        >
+                                            {dev.posted ? "Withdraw" : "Publish"}
+                                        </Button>
+                                    ) : null}
+                                    <Button as={Link} to={`/admin/developments/${dev._id}`} size="sm" variant="ghost">
+                                        <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+                                        Open
+                                    </Button>
+                                    {onEdit ? (
+                                        <Button size="sm" variant="ghost" onClick={() => onEdit(dev)}>
+                                            <Pencil className="size-3 shrink-0" aria-hidden="true" />
+                                            Edit
+                                        </Button>
+                                    ) : null}
+                                    {onDelete ? (
+                                        <Button
+                                            size="sm"
+                                            variant="danger"
+                                            onClick={() => onDelete(dev)}
+                                            loading={deletingDevId === dev._id}
+                                            className="ml-auto"
+                                        >
+                                            <Trash2 className="size-3 shrink-0" aria-hidden="true" />
+                                            Delete
+                                        </Button>
+                                    ) : null}
                                 </div>
-                            )}
-
-                            {/* Footer */}
-                            <div className="flex justify-between items-center pt-3 border-t border-gray-700/50">
-                                {/* Date */}
-                                <span className="text-xs text-gray-500">
-                                    {formatDate(dev.createdAt) || formatDate(dev.updatedAt) || "No date"}
-                                </span>
-
-                                {/* Word Count Indicator */}
-                                <span className="text-xs text-gray-500">
-                                    {dev.content ? `${dev.content.split(' ').length} words` : "No content"}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
             )}
-        </div>
+        </Panel>
     );
 };
 
-export default DevTable;
+export default AdminDevTable;
