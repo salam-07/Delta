@@ -61,27 +61,27 @@ export const pct = (chg, price) =>
 export const DEMO_STEPS = [
 	{
 		code: '01',
-		title: 'Contact Us',
-		description: 'Get in touch for your personalized competition structure.',
-		status: 'MARKET AUTHORED',
+		title: 'Contact us',
+		description: 'Tell us what you need and we set the competition up with you.',
+		status: 'MARKET CREATED',
 	},
 	{
 		code: '02',
-		title: 'Register Participants',
-		description: 'Register your participants, giving each an initial simulated wealth.',
-		status: 'PARTICIPANTS SEEDED',
+		title: 'Add participants',
+		description: 'We set up each participant with a starting cash balance.',
+		status: 'PARTICIPANTS READY',
 	},
 	{
 		code: '03',
-		title: 'Start Trading',
-		description: 'Execute trades, manage portfolios, and implement strategies.',
-		status: 'DEVELOPMENT PUBLISHED',
+		title: 'Start trading',
+		description: 'Participants buy and sell, manage their portfolios and try out strategies.',
+		status: 'NEWS PUBLISHED',
 	},
 	{
 		code: '04',
-		title: 'Track Progress',
-		description: 'Admins monitor performance on leaderboards and analyze results.',
-		status: 'STANDINGS SETTLED',
+		title: 'Track progress',
+		description: 'Instructors follow the leaderboard and see how everyone did.',
+		status: 'RESULTS FINAL',
 	},
 ];
 

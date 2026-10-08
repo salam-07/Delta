@@ -6,7 +6,7 @@ import { REPO_URL } from './TerminalChrome';
 const CHANNELS = [
 	{ label: 'Email', value: 'abdussalamameen26@gmail.com', href: 'mailto:abdussalamameen26@gmail.com' },
 	{ label: 'Phone', value: '+92 333 7298886', href: 'tel:+923337298886' },
-	{ label: 'Location', value: 'Virtual worldwide', href: null },
+	{ label: 'Location', value: 'Online, worldwide', href: null },
 ];
 
 /**
@@ -26,9 +26,6 @@ const CloseBlock = () => (
 					<div className="flex items-stretch justify-between border-b border-[#050A07]/25">
 						<span className="bg-[#050A07] px-3 py-1.5 font-term text-[10px] font-bold uppercase tracking-label text-[#31D96A]">
 							F6 · Contact
-						</span>
-						<span className="flex items-center px-3 py-1.5 font-term text-[10px] uppercase tracking-label text-[#050A07]/65">
-							Row inverted
 						</span>
 					</div>
 
@@ -60,7 +57,7 @@ const CloseBlock = () => (
 									rel="noreferrer noopener"
 									className="flex items-center gap-2 border border-[#050A07]/45 px-5 py-3 font-term text-[11px] uppercase tracking-label text-[#050A07] transition-colors hover:bg-[#050A07]/10 hover:border-[#050A07]"
 								>
-									Read the source
+									View the source code
 									<span aria-hidden="true" className="font-board text-[15px]">
 										&gt;
 									</span>
@@ -110,8 +107,8 @@ const CloseBlock = () => (
 							</dl>
 
 							<p className="mt-5 border border-[#050A07]/40 p-3 font-term text-[11.5px] leading-relaxed text-[#050A07]/80">
-								Administrator access is granted by the organizers — there is no public
-								administrator signup. Participants register themselves.
+								Administrator accounts are set up by the organizers. There is no public
+								admin signup. Participants can register themselves.
 							</p>
 						</div>
 					</div>
@@ -123,7 +120,7 @@ const CloseBlock = () => (
 						<img src="/logo.svg" alt="" className="h-4 w-4" />
 						<span className="font-board text-[18px] tracking-cell text-[#31D96A]">DELTA</span>
 						<p className="font-term text-[11.5px] text-[#A8E6BF]/70">
-							Simulated stock market competitions for education and competition.
+							Simulated stock market competitions for classrooms and schools.
 						</p>
 
 						<nav aria-label="Page sections" className="ml-auto flex flex-wrap gap-x-5 gap-y-2">
@@ -147,7 +144,7 @@ const CloseBlock = () => (
 
 					<div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3.5 sm:px-8">
 						<Label>© 2026 Delta. All rights reserved.</Label>
-						<Label>Virtual money only — no real funds, no real-market data.</Label>
+						<Label>Virtual money only. No real funds and no real market data.</Label>
 						<div className="ml-auto flex items-center gap-4">
 							<Link
 								to="/login"
@@ -168,7 +165,6 @@ const CloseBlock = () => (
 				{/* The tape runs out. */}
 				<div className="flex items-center gap-4 py-8">
 					<span aria-hidden="true" className="h-px flex-1 bg-[#31D96A]/25" />
-					<Label>End of session</Label>
 					<span aria-hidden="true" className="h-px flex-1 bg-[#31D96A]/25" />
 				</div>
 			</div>

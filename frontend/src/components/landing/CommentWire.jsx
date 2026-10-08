@@ -64,13 +64,13 @@ const CommentWire = () => (
 					<div className="lg:col-span-3 lg:pr-8">
 						<Label tone="phosphor">F5 · Comment</Label>
 						<h2 className="mt-3 font-board text-[8vw] uppercase leading-[0.92] tracking-cell text-[#31D96A] bloom-soft sm:text-[2.6rem] lg:text-[2.3rem]">
-							From the
+							What people
 							<br />
-							desks
+							say
 						</h2>
 						<p className="mt-4 max-w-[36ch] font-term text-[12.5px] leading-relaxed text-[#A8E6BF]/75">
-							Three sources, three seats: one who traded it, one who ran it for a school, one who
-							administered a competition.
+							Three people who have used Delta: a student who traded, a principal who ran a
+							competition at their school, and a professor who managed one.
 						</p>
 					</div>
 
@@ -82,7 +82,7 @@ const CommentWire = () => (
 										<span className="font-board text-[14px] tracking-cell text-[#31D96A]">
 											{c.ref}
 										</span>
-										<Label>Comment</Label>
+										<Label>Quote</Label>
 									</span>
 									<span className="flex items-center px-3 py-1.5">
 										<span className="border border-[#22D3EE]/40 px-2 py-0.5 font-term text-[9px] uppercase tracking-label text-[#22D3EE]">

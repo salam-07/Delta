@@ -107,7 +107,6 @@ const BoardHero = () => {
 						<div className="flex items-baseline gap-4 py-2">
 							<Label className="on-tube w-[3.6rem] shrink-0">Sym</Label>
 							<Label className="on-tube">Instrument</Label>
-							<Label className="on-tube ml-auto">Row commandeered</Label>
 						</div>
 					</div>
 				</div>
@@ -138,8 +137,8 @@ const BoardHero = () => {
 						<div className="flex gap-4">
 							<span aria-hidden="true" className="mt-1 w-1 shrink-0 self-stretch bg-[#22D3EE]" />
 							<p className="on-tube max-w-[62ch] font-term text-[13px] leading-relaxed text-[#A8E6BF] sm:text-[15px]">
-								Your instructor authors the market. They create the stocks, move the prices, and
-								publish the news&nbsp;— participants trade it live and learn what actually moves a
+								Your instructor builds the market. They create the stocks, set the prices, and
+								publish the news. Participants trade it live and find out what actually moves a
 								price.
 							</p>
 						</div>
@@ -165,7 +164,7 @@ const BoardHero = () => {
 								href="#mechanism"
 								className="on-tube flex items-center gap-2 border border-[#31D96A]/45 bg-[#050A07]/40 px-5 py-3 font-term text-[11px] uppercase tracking-label text-[#A8E6BF] backdrop-blur-[1px] transition-colors hover:bg-[#31D96A]/12 hover:border-[#31D96A]"
 							>
-								Watch the mechanism
+								See how it works
 								<span aria-hidden="true" className="font-board text-[15px]">
 									v
 								</span>
@@ -174,7 +173,7 @@ const BoardHero = () => {
 								href="#contact"
 								className="on-tube font-term text-[10px] uppercase tracking-label text-[#1FA8C4] underline decoration-[#1FA8C4]/50 underline-offset-4 transition-colors hover:text-[#22D3EE]"
 							>
-								Administrator access — contact the organizers
+								Administrators: contact the organizers
 							</a>
 						</div>
 					</div>
@@ -197,7 +196,7 @@ const BoardHero = () => {
 									<Label className="on-tube pb-1">{t.label}</Label>
 								</div>
 							))}
-							<Label className="on-tube ml-auto pb-1">As of 2026-03</Label>
+							<Label className="on-tube ml-auto pb-1">As of March 2026</Label>
 						</div>
 					</div>
 				</div>
@@ -208,7 +207,7 @@ const BoardHero = () => {
 			{/* Board caption — the wall behind is authored demonstration material. */}
 			<div className="px-3 sm:px-6 pt-3">
 				<div className="mx-auto max-w-[1560px]">
-					<Label>Wall behind: synthetic market data — demonstration</Label>
+					<Label>The market data behind this page is simulated.</Label>
 				</div>
 			</div>
 		</section>

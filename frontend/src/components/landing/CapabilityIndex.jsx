@@ -10,38 +10,38 @@ const FUNCTIONS = [
 	{
 		code: '01',
 		name: 'Real-time markets',
-		detail: 'Prices and the overall market index update live while a competition is running.',
+		detail: 'Prices and the market index update live while a competition is running.',
 		who: 'Both',
 	},
 	{
 		code: '02',
-		name: 'Developments',
+		name: 'Market news',
 		detail:
-			'News and current-affairs events the administrator publishes. Participants have to read them and react.',
+			'News and current-affairs stories the instructor publishes. Participants have to read them and react.',
 		who: 'Both',
 	},
 	{
 		code: '03',
 		name: 'Full admin controls',
-		detail: 'Create, update and delete stocks. Set and move prices. Write and publish developments.',
+		detail: 'Create and edit stocks. Set and change prices. Write and publish news.',
 		who: 'Administrator',
 	},
 	{
 		code: '04',
 		name: 'Competition events',
-		detail: 'Time-based competitions with their own rules, objectives and gamified rewards.',
+		detail: 'Timed competitions with their own rules, goals and rewards.',
 		who: 'Both',
 	},
 	{
 		code: '05',
 		name: 'Portfolio management',
-		detail: 'Track investments, analyze performance, and manage a virtual portfolio and cash balance.',
+		detail: 'See what you own, how it is performing, and how much cash you have left.',
 		who: 'Participant',
 	},
 	{
 		code: '06',
 		name: 'Trade history',
-		detail: 'Complete transaction history with detailed analytics and performance metrics.',
+		detail: 'Every trade you have made, with the numbers behind it.',
 		who: 'Both',
 	},
 	{
@@ -53,7 +53,7 @@ const FUNCTIONS = [
 	{
 		code: '08',
 		name: 'Safe learning',
-		detail: 'Virtual money only. No real funds, no real-market data, no way to lose anything.',
+		detail: 'Virtual money only. No real funds, no real market data, and nothing you can actually lose.',
 		who: 'Participant',
 	},
 ];
@@ -76,13 +76,13 @@ const CapabilityIndex = () => (
 	>
 		<div className="px-5 pt-7 pb-5 sm:px-8 lg:px-10">
 			<h2 className="font-board text-[7vw] uppercase leading-[0.92] tracking-cell text-[#31D96A] bloom-soft sm:text-[3.4rem]">
-				What the
+				What Delta
 				<br />
-				terminal does
+				does
 			</h2>
 			<p className="mt-5 max-w-[58ch] font-term text-[13px] leading-relaxed text-[#A8E6BF]/85">
-				One market, two seats. The administrator authors it; the participants trade it. Everything
-				below is in the product today.
+				Instructors build and run the market. Participants trade in it. Everything listed here already
+				works today.
 			</p>
 		</div>
 
@@ -113,8 +113,8 @@ const CapabilityIndex = () => (
 		</ul>
 
 		<div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#31D96A]/30 px-5 py-3 sm:px-8 lg:px-10">
-			<Label>End of index</Label>
-			<Label tone="phosphor">Web · React · Socket.io</Label>
+			<Label>End of list</Label>
+			<Label tone="phosphor">Built with React and Socket.io</Label>
 		</div>
 	</Dock>
 );

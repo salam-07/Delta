@@ -63,13 +63,9 @@ export const SkeletonValue = ({ className = "w-24" }) => (
     <span className={`inline-block h-5 animate-pulse bg-phosphor-dim/60 align-middle ${className}`} aria-hidden="true" />
 );
 
-/** The product's one busy indicator. */
+/** What a panel shows while its data is on the way. */
 export const LoadingPanel = ({ label = "Loading", className = "" }) => (
-    <div className={`flex items-center justify-center gap-3 px-6 py-14 ${className}`} role="status">
-        <span
-            className="size-4 shrink-0 animate-spin border border-phosphor/25 border-t-phosphor"
-            aria-hidden="true"
-        />
+    <div className={`flex items-center justify-center px-6 py-14 ${className}`} role="status">
         <span className="font-term text-[11px] uppercase tracking-label text-phosphor-mid">{label}</span>
     </div>
 );

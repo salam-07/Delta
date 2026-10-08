@@ -108,13 +108,13 @@ const MechanismDemo = () => {
 			<div className="relative px-3 sm:px-6">
 				<div className="mx-auto max-w-[1560px]">
 					<div className="max-w-[46ch] pb-6">
-						<Label tone="phosphor">Fig. 1 — the mechanism</Label>
+						<Label tone="phosphor">How it works</Label>
 						<h2 className="mt-3 font-board text-[8vw] uppercase leading-[0.92] tracking-cell text-[#31D96A] bloom-soft sm:text-[3.6rem]">
 							Watch an instructor move the market
 						</h2>
 						<p className="mt-4 font-term text-[13px] leading-relaxed text-[#A8E6BF]/85">
-							A public-market simulator mirrors real tickers, so nothing in it was written to
-							teach anything. Delta&apos;s market is authored. Here is one competition, in four
+							Other simulators copy real stock prices, so nothing in them was built to teach. Delta
+							is different: the instructor writes the market. Here is one competition, in four
 							steps.
 						</p>
 					</div>
@@ -126,7 +126,7 @@ const MechanismDemo = () => {
 								F3 · Mechanism
 							</span>
 							<div className="flex items-center gap-4 px-3 py-1.5">
-								<Label>Synthetic demonstration data</Label>
+								<Label>Demo data</Label>
 								<button
 									type="button"
 									onClick={run}
@@ -141,11 +141,11 @@ const MechanismDemo = () => {
 						</div>
 
 						<div className="grid grid-cols-1 divide-y divide-[#31D96A]/15 lg:grid-cols-[1.05fr_0.95fr_1fr] lg:divide-x lg:divide-y-0">
-							{/* --- Developments wire --- */}
+							{/* --- Market news wire --- */}
 							<div className="p-4 sm:p-5">
 								<div className="flex items-center justify-between pb-3">
-									<Label>Developments</Label>
-									<Label tone="phosphor">{priced ? '1 unread' : 'Standing by'}</Label>
+									<Label>Market news</Label>
+									<Label tone="phosphor">{priced ? '1 new' : 'Waiting'}</Label>
 								</div>
 
 								<div
@@ -182,7 +182,7 @@ const MechanismDemo = () => {
 										</>
 									) : (
 										<p className="py-6 text-center font-term text-[11px] uppercase tracking-label text-[#1C5C38]">
-											No developments published
+											No news yet
 										</p>
 									)}
 								</div>
@@ -193,15 +193,15 @@ const MechanismDemo = () => {
 											<Label>Participants</Label>
 										</dt>
 										<dd className="font-board text-[19px] leading-none tracking-cell tabular-nums text-[#A8E6BF]">
-											{act >= 1 ? '128' : '—'}
+											{act >= 1 ? '128' : '-'}
 										</dd>
 									</div>
 									<div className="flex items-baseline justify-between gap-3">
 										<dt>
-											<Label>Opening balance each</Label>
+											<Label>Starting cash each</Label>
 										</dt>
 										<dd className="font-board text-[19px] leading-none tracking-cell tabular-nums text-[#A8E6BF]">
-											{act >= 1 ? '$100,000' : '—'}
+											{act >= 1 ? '$100,000' : '-'}
 										</dd>
 									</div>
 								</dl>
@@ -211,13 +211,13 @@ const MechanismDemo = () => {
 							<div className="p-4 sm:p-5">
 								<div className="flex items-center justify-between pb-3">
 									<Label>Market</Label>
-									<Label tone="phosphor">{priced ? 'Repriced' : 'At open'}</Label>
+									<Label tone="phosphor">{priced ? 'After the news' : 'Before the news'}</Label>
 								</div>
 
 								<div className="grid grid-cols-[3.2rem_1fr_auto] items-baseline gap-x-3 border-b border-[#31D96A]/20 pb-1.5">
-									<Label>Sym</Label>
+									<Label>Ticker</Label>
 									<Label>Sector</Label>
-									<Label>Last</Label>
+									<Label>Price</Label>
 								</div>
 
 								<ul>
@@ -258,7 +258,7 @@ const MechanismDemo = () => {
 								</ul>
 
 								<div className="mt-3 flex items-end justify-between gap-3 border-t border-[#31D96A]/30 pt-3">
-									<Label tone="phosphor">Delta composite</Label>
+									<Label tone="phosphor">Market index</Label>
 									<div className="text-right">
 										<span
 											key={`idx-${priced}`}
@@ -280,8 +280,8 @@ const MechanismDemo = () => {
 							{/* --- Blotter + standings --- */}
 							<div className="p-4 sm:p-5">
 								<div className="flex items-center justify-between pb-3">
-									<Label>Blotter</Label>
-									<Label tone="phosphor">{fills} filled</Label>
+									<Label>Trades</Label>
+									<Label tone="phosphor">{fills} trades</Label>
 								</div>
 
 								<ul className="min-h-[6.5rem]">
@@ -308,15 +308,15 @@ const MechanismDemo = () => {
 									))}
 									{fills === 0 && (
 										<li className="py-6 text-center font-term text-[11px] uppercase tracking-label text-[#1C5C38]">
-											No fills
+											No trades yet
 										</li>
 									)}
 								</ul>
 
 								<div className="mt-3 border-t border-[#31D96A]/20 pt-3">
 									<div className="flex items-center justify-between pb-2">
-										<Label>Standings</Label>
-										<Label tone="phosphor">{settled ? 'Settled' : 'Provisional'}</Label>
+										<Label>Leaderboard</Label>
+										<Label tone="phosphor">{settled ? 'Final' : 'Not final'}</Label>
 									</div>
 									<ul>
 										{standings.map((s, i) => (
@@ -397,8 +397,8 @@ const MechanismDemo = () => {
 
 					<p className="pt-3 pb-2">
 						<Label>
-							Instruments, participants, fills and standings above are authored for this
-							demonstration. The market behaves exactly this way in a live competition.
+							The stocks, participants, trades and scores above are examples made for this
+							demo. In a real competition the market works exactly this way.
 						</Label>
 					</p>
 				</div>
